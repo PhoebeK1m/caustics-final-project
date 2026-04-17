@@ -1,0 +1,28 @@
+{
+  "name": "caustics-final-project",
+  "version": "1.0.0",
+  "description": "",
+  "main": "main.js",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/PhoebeK1m/caustics-final-project.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/PhoebeK1m/caustics-final-project/issues"
+  },
+  "homepage": "https://github.com/PhoebeK1m/caustics-final-project#readme",
+  "dependencies": {
+    "three": "^0.184.0"
+  },
+  "devDependencies": {
+    "vite": "^8.0.8",
+    "vite-plugin-glsl": "^1.6.0"
+  }
+}
