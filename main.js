@@ -9,7 +9,7 @@ let showNormalPlane = false;
 let showCausticPlane = true;
 let showJuice = false;
 let showChromatic = true;
-let intensity = 3;
+let intensity = 3.5;
 let chromaticAberration = 0.2;
 const meshesToRender = [];
 const meshMaterials = [];
@@ -34,7 +34,7 @@ renderer.setScissor(0, 0, sizes.halfWidth, sizes.height);
 renderer.setViewport(0, 0, sizes.halfWidth, sizes.height);
 
 // create hidden camera to render normals
-const normalCamera = new THREE.PerspectiveCamera(40, 1, 0.1, 1000);
+const normalCamera = new THREE.PerspectiveCamera(55, 1, 0.1, 1000);
 
 // create new render target (aka frame buffer object) for normals
 const normalRenderTarget = new THREE.WebGLRenderTarget(2000, 2000, {
@@ -67,7 +67,7 @@ const causticQuad = new FullScreenQuad();
 
 // camera movement
 const controls = new OrbitControls(camera, canvas);
-const fixedRadius = 5;
+const fixedRadius = 10;
 controls.minDistance = fixedRadius; // drag rotates and translate camera around target
 controls.maxDistance = fixedRadius;
 controls.enableZoom = false; 
@@ -153,12 +153,19 @@ spotLight.decay = 2;
 
 scene.add(spotLight);
 
+const bounds = new THREE.Box3();
+
 //animation loop
 const tick = () => {
     // update controls for damping camera movement
     controls.update();
     normalPlane.visible = false;
     causticPlane.visible = false;
+
+    // find caustic center
+    const lightDir = spotLight.position.clone().normalize();
+    const targetObject = torusknot;
+    const { center, radius } = computeCausticsBounds(targetObject, lightDir);
     
     // render
     // update camera position with light
@@ -187,6 +194,9 @@ const tick = () => {
     for (let i = 0; i < meshesToRender.length; i++) {
         meshesToRender[i].material = meshMaterials[i];
     }
+    // film
+    // torusknot.rotation.x += 0.005;
+    // torusknot.rotation.y += 0.01;
 
     // render caustics
     causticQuad.material = causticMap;
@@ -201,6 +211,13 @@ const tick = () => {
     // by using the quads (actually 2 triangles) to find caustics (using area)
     causticQuad.render(renderer);
 
+    const scaleCorrection = 1.35;
+    causticPlane.position.set(
+        center.x,
+        -4,
+        center.z
+    );
+    causticPlane.scale.setScalar(radius * scaleCorrection);
     causticPlane.material.uniforms.uTexture.value = causticRenderTarget.texture;
     causticPlane.material.uniforms.uAberration.value = chromaticAberration;
     causticPlane.material.uniforms.uChromatic.value = showChromatic;
@@ -234,3 +251,39 @@ window.addEventListener('keydown', (event) => {
         showChromatic = !showChromatic;
     }
 });
+
+function computeCausticsBounds(object, lightDir) {
+    bounds.setFromObject(object, true);
+
+    const corners = [
+        new THREE.Vector3(bounds.min.x, bounds.min.y, bounds.min.z),
+        new THREE.Vector3(bounds.min.x, bounds.min.y, bounds.max.z),
+        new THREE.Vector3(bounds.min.x, bounds.max.y, bounds.min.z),
+        new THREE.Vector3(bounds.min.x, bounds.max.y, bounds.max.z),
+        new THREE.Vector3(bounds.max.x, bounds.min.y, bounds.min.z),
+        new THREE.Vector3(bounds.max.x, bounds.min.y, bounds.max.z),
+        new THREE.Vector3(bounds.max.x, bounds.max.y, bounds.min.z),
+        new THREE.Vector3(bounds.max.x, bounds.max.y, bounds.max.z),
+    ];
+
+    const projected = corners.map((v) => {
+        const t = (Math.abs(lightDir.y) < 0.0001) ? 0 : -v.y / lightDir.y;
+        return new THREE.Vector3(
+        v.x + lightDir.x * t,
+        v.y + lightDir.y * t,
+        v.z + lightDir.z * t
+        );
+    });
+
+    const center = projected
+        .reduce((a, b) => a.add(b), new THREE.Vector3())
+        .divideScalar(projected.length);
+
+    const radius = projected.reduce((max, p) => {
+        const dx = p.x - center.x;
+        const dz = p.z - center.z;
+        return Math.max(max, Math.sqrt(dx * dx + dz * dz));
+    }, 0);
+
+    return { center, radius };
+}

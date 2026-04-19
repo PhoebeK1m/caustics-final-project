@@ -35,7 +35,7 @@ export const causticMapFragmentShader = `
 
         float color = oldArea / newArea;
         float scale = clamp(color, 0.0, 1.0) * uIntensity;
-        scale = pow(scale, 4.0);
+        scale = pow(scale, 2.0);
 
         gl_FragColor = vec4(vec3(scale), 1.0);
     }

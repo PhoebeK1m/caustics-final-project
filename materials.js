@@ -27,6 +27,7 @@ export const getCausticMaterial = () => {
         blending: THREE.CustomBlending,
         blendSrc: THREE.OneFactor,
         blendDst: THREE.SrcAlphaFactor,
+        // blending: THREE.AdditiveBlending,
         side: THREE.DoubleSide,
         depthWrite: false
     });
