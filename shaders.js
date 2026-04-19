@@ -36,11 +36,6 @@ export const causticFragmentShader = `
         float color = oldArea / newArea;
         float scale = clamp(color, 0.0, 1.0) * uIntensity;
         scale = pow(scale, 4.0);
-        // scale = smoothstep(0.0, 1.0, scale);
-        // float pivot = 0.5;
-        // float contrast = 2.0;
-        // scale = (scale - pivot) * contrast + pivot;
-        // scale = clamp(scale, 0.0, 1.0);
 
         gl_FragColor = vec4(vec3(scale), 1.0);
     }

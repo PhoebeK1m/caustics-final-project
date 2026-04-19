@@ -50,7 +50,7 @@ normalPlane.rotation.set(-Math.PI/2, 0,0);
 scene.add(normalPlane);
 
 // create new render target for caustic map
-const causticRenderTarget = new THREE.WebGLRenderTarget(2000, 2000, );
+const causticRenderTarget = new THREE.WebGLRenderTarget(2000, 2000);
 // get material for caustics
 const causticMaterial = getCausticMaterial();
 const causticQuad = new FullScreenQuad();
