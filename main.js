@@ -1,8 +1,12 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import { FullScreenQuad } from 'three/addons/postprocessing/Pass.js';
 
-let showNormalPlane = true;
+import { getCausticMaterial } from "./materials.js";
+
+let showNormalPlane = false;
+let intensity = 1.5;
 
 // set up webgl/three scene
 const canvas = document.querySelector('canvas.webgl');
@@ -26,19 +30,30 @@ renderer.setViewport(0, 0, sizes.halfWidth, sizes.height);
 // create hidden camera to render normals
 const normalCamera = new THREE.PerspectiveCamera(40, 1, 0.1, 1000);
 
-// create new render target (aka frame buffer object)
-const normalRenderTarget = new THREE.WebGLRenderTarget(2000, 2000);
-
+// create new render target (aka frame buffer object) for normals
+const normalRenderTarget = new THREE.WebGLRenderTarget(2000, 2000, {
+    type: THREE.HalfFloatType,
+    magFilter: THREE.LinearFilter,
+    minFilter: THREE.LinearFilter,
+});
 // create material for rgb normal
 const normalMaterial = new THREE.MeshNormalMaterial();
 
 // create a plane to view normals
 const normalPlaneGeometry = new THREE.PlaneGeometry(2, 2);
-const normalPlaneMaterial = new THREE.MeshBasicMaterial({ map: normalRenderTarget.texture });
+const normalPlaneMaterial = new THREE.MeshBasicMaterial({ 
+    map: normalRenderTarget.texture 
+});
 const normalPlane = new THREE.Mesh(normalPlaneGeometry, normalPlaneMaterial);
 normalPlane.position.set(0,-3,0);
 normalPlane.rotation.set(-Math.PI/2, 0,0);
 scene.add(normalPlane);
+
+// create new render target for caustic map
+const causticRenderTarget = new THREE.WebGLRenderTarget(2000, 2000, );
+// get material for caustics
+const causticMaterial = getCausticMaterial();
+const causticQuad = new FullScreenQuad();
 
 // camera movement
 const controls = new OrbitControls(camera, canvas);
@@ -79,6 +94,17 @@ const torusknot = new THREE.Mesh(geometry, material);
 torusknot.scale.setScalar(0.005);
 scene.add(torusknot);
 
+// caustics plane
+const causticPlaneGeometry = new THREE.PlaneGeometry(2, 2);
+const causticPlaneMaterial = new THREE.MeshBasicMaterial({ 
+    map: causticRenderTarget.texture, 
+    // transparent: true 
+});
+const causticPlane = new THREE.Mesh(causticPlaneGeometry, causticPlaneMaterial);
+// causticPlane.position.set(0,-3,0);
+// causticPlane.rotation.set(-Math.PI/2, 0,0);
+scene.add(causticPlane);
+
 // light
 const spotLight = new THREE.SpotLight(0xffffff, 100); 
 spotLight.position.set(0, 5, 0);
@@ -111,9 +137,18 @@ const tick = () => {
     normalPlane.visible = showNormalPlane;
     
     // set back to original material
+    torusknot.material = originalMaterial;
+
+    causticQuad.material = causticMaterial;
+    causticQuad.material.uniforms.uTexture.value = normalRenderTarget.texture;
+    causticQuad.material.uniforms.uLight.value = spotLight.position;
+    causticQuad.material.uniforms.uIntensity.value = intensity;
+    renderer.setRenderTarget(causticRenderTarget);
+    causticQuad.render(renderer);
+
     renderer.setRenderTarget(null);
     renderer.setClearColor(0x4287f5, 1);
-    torusknot.material = originalMaterial;
+
     renderer.render(scene, camera);
 
     // call tick again on the next frame
