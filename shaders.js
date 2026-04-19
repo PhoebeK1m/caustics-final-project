@@ -45,6 +45,7 @@ export const causticMaterialFragmentShader = `
     precision mediump float;
     uniform sampler2D uTexture;
     uniform float uAberration;
+    uniform bool uChromatic;
 
     varying vec2 vUV;
 
@@ -90,15 +91,19 @@ export const causticMaterialFragmentShader = `
             if (m == 1) dir = vec2(-1.0, 0.0);  // -X
             if (m == 2) dir = vec2(0.0, 1.0);   // +Y
             if (m == 3) dir = vec2(0.0, -1.0);  // -Y
-            float xStrength = 2.0;
+            float xStrength = 1.5;
             float yStrength = 0.3;
             dir.x *= xStrength;
             dir.y *= yStrength;
 
-        
-            refractCol.r += texture2D(uTexture, uv + (uAberration * slide * dir * 1.0) ).r;
-            refractCol.g += texture2D(uTexture, uv + (uAberration * slide * dir * 2.0) ).g;
-            refractCol.b += texture2D(uTexture, uv + (uAberration * slide * dir * 3.0) ).b;
+            if(uChromatic) {
+                refractCol.r += texture2D(uTexture, uv + (uAberration * slide * dir * 1.0) ).r;
+                refractCol.g += texture2D(uTexture, uv + (uAberration * slide * dir * 2.0) ).g;
+                refractCol.b += texture2D(uTexture, uv + (uAberration * slide * dir * 3.0) ).b;
+            } else {
+                float sampleValue = texture2D(uTexture, uv + (uAberration * slide * dir * 2.0)).g;
+                refractCol += vec3(sampleValue);
+            }
         }
         // Divide by the number of layers to normalize colors (rgb values can be worth up to the value of SAMPLES)
         refractCol /= float(SAMPLES);

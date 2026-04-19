@@ -8,6 +8,7 @@ import { getCausticMap, getCausticMaterial } from "./materials.js";
 let showNormalPlane = false;
 let showCausticPlane = true;
 let showJuice = false;
+let showChromatic = true;
 let intensity = 3;
 let chromaticAberration = 0.2;
 const meshesToRender = [];
@@ -202,6 +203,7 @@ const tick = () => {
 
     causticPlane.material.uniforms.uTexture.value = causticRenderTarget.texture;
     causticPlane.material.uniforms.uAberration.value = chromaticAberration;
+    causticPlane.material.uniforms.uChromatic.value = showChromatic;
 
     renderer.setRenderTarget(null);
     renderer.setClearColor(0x4287f5, 1);
@@ -224,5 +226,11 @@ window.addEventListener('keydown', (event) => {
 window.addEventListener('keydown', (event) => {
     if (event.key.toLowerCase() === 'j') {
         showJuice = !showJuice;
+    }
+});
+
+window.addEventListener('keydown', (event) => {
+    if (event.key.toLowerCase() === 'c') {
+        showChromatic = !showChromatic;
     }
 });

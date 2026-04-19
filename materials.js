@@ -19,11 +19,15 @@ export const getCausticMaterial = () => {
             uLight: { value: new THREE.Vector2(0, 0, 0) },
             uTexture: { value: null },
             uAberration: { value: 0.02 },
+            uChromatic: { value: true }
         },
         vertexShader: causticVertexShader,
         fragmentShader: causticMaterialFragmentShader,
         transparent: true,
-        blending: THREE.AdditiveBlending,
-        side: THREE.DoubleSide 
+        blending: THREE.CustomBlending,
+        blendSrc: THREE.OneFactor,
+        blendDst: THREE.SrcAlphaFactor,
+        side: THREE.DoubleSide,
+        depthWrite: false
     });
 };
