@@ -6,7 +6,11 @@ import { FullScreenQuad } from 'three/addons/postprocessing/Pass.js';
 import { getCausticMaterial } from "./materials.js";
 
 let showNormalPlane = false;
+let showCausticPlane = true;
+let showJuice = false;
 let intensity = 1.5;
+const meshesToRender = [];
+const meshMaterials = [];
 
 // set up webgl/three scene
 const canvas = document.querySelector('canvas.webgl');
@@ -85,10 +89,25 @@ const loader = new GLTFLoader();
 
 // juice
 let juice;
+const juicematerial = new THREE.MeshStandardMaterial({
+    transparent: true,
+    opacity: 0.5,
+    color: "#ffffff",
+});
+
 loader.load(
-    './models/juice.glb',
+    './models/juice1.glb',
     (gltf) => {
         juice = gltf.scene;
+
+        juice.traverse((node) => {
+            if (node.isMesh) {
+                node.geometry.computeVertexNormals();
+                node.material = juicematerial;
+                meshesToRender.push(node);
+                meshMaterials.push(juicematerial);
+            }
+        });
         scene.add(juice);        
         juice.scale.set(1, 1, 1);
     },
@@ -110,6 +129,8 @@ const material = new THREE.MeshStandardMaterial({
 const torusknot = new THREE.Mesh(geometry, material);
 torusknot.scale.setScalar(0.005);
 scene.add(torusknot);
+meshesToRender.push(torusknot);
+meshMaterials.push(material);
 
 // caustics plane
 const causticPlaneGeometry = new THREE.PlaneGeometry(2, 2);
@@ -118,8 +139,8 @@ const causticPlaneMaterial = new THREE.MeshBasicMaterial({
     // transparent: true 
 });
 const causticPlane = new THREE.Mesh(causticPlaneGeometry, causticPlaneMaterial);
-// causticPlane.position.set(0,-3,0);
-// causticPlane.rotation.set(-Math.PI/2, 0,0);
+causticPlane.position.set(0,-3,0);
+causticPlane.rotation.set(-Math.PI/2, 0,0);
 scene.add(causticPlane);
 
 // light
@@ -135,15 +156,21 @@ const tick = () => {
     // update controls for damping camera movement
     controls.update();
     normalPlane.visible = false;
+    causticPlane.visible = false;
+    
     // render
     // update camera position with light
     normalCamera.position.copy(spotLight.position);
     normalCamera.lookAt(torusknot.position);
 
     // use normals for material
-    const originalMaterial = torusknot.material;
-    torusknot.material = normalMaterial;
-    torusknot.material.side = THREE.BackSide;
+    for (let i = 0; i < meshesToRender.length; i++) {
+        meshesToRender[i].material = normalMaterial;
+        meshesToRender[i].material.side = THREE.BackSide;
+        if (i > 0) {
+            meshesToRender[i].visible = showJuice;
+        }
+    }
     
     // change fbo
     renderer.setRenderTarget(normalRenderTarget);
@@ -152,9 +179,12 @@ const tick = () => {
     // render normals scene
     renderer.render(scene, normalCamera);
     normalPlane.visible = showNormalPlane;
+    causticPlane.visible = showCausticPlane;
     
     // set back to original material
-    torusknot.material = originalMaterial;
+    for (let i = 0; i < meshesToRender.length; i++) {
+        meshesToRender[i].material = meshMaterials[i];
+    }
 
     causticQuad.material = causticMaterial;
     causticQuad.material.uniforms.uTexture.value = normalRenderTarget.texture;
@@ -177,5 +207,12 @@ tick();
 window.addEventListener('keydown', (event) => {
     if (event.key.toLowerCase() === 'n') {
         showNormalPlane = !showNormalPlane;
+        showCausticPlane = !showCausticPlane;
+    }
+});
+
+window.addEventListener('keydown', (event) => {
+    if (event.key.toLowerCase() === 'j') {
+        showJuice = !showJuice;
     }
 });
