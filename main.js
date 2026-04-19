@@ -2,6 +2,8 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 
+let showNormalPlane = true;
+
 // set up webgl/three scene
 const canvas = document.querySelector('canvas.webgl');
 const scene = new THREE.Scene();
@@ -69,9 +71,9 @@ controls.enableDamping = true;
 // knot
 const geometry = new THREE.TorusKnotGeometry(200, 40, 600, 16);
 const material = new THREE.MeshStandardMaterial({
-    color: 0xa6baf5,
     transparent: true,
-    opacity: 0.5
+    opacity: 0.5,
+    color: "#ffffff",
 });
 const torusknot = new THREE.Mesh(geometry, material);
 torusknot.scale.setScalar(0.005);
@@ -106,7 +108,7 @@ const tick = () => {
     renderer.clear();
     // render normals scene
     renderer.render(scene, normalCamera);
-    normalPlane.visible = true;
+    normalPlane.visible = showNormalPlane;
     
     // set back to original material
     renderer.setRenderTarget(null);
@@ -119,3 +121,9 @@ const tick = () => {
 };
 
 tick();
+
+window.addEventListener('keydown', (event) => {
+    if (event.key.toLowerCase() === 'n') {
+        showNormalPlane = !showNormalPlane;
+    }
+});
