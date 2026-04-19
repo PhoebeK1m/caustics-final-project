@@ -17,18 +17,23 @@ export const causticMapFragmentShader = `
     varying vec3 vPos;
 
     uniform sampler2D uTexture;
+    uniform sampler2D uBackTexture;
     uniform vec3 uLight;
     uniform float uIntensity;
 
     void main() {
         vec2 uv = vUV;
-        vec3 normalTexture = texture2D(uTexture, uv).rgb;
-        vec3 normal = normalize(normalTexture);
-        vec3 lightDir = normalize(uLight);
-        vec3 ray = refract(lightDir, normal, 1.0/1.33); // uses snell's law  :D air to water use 1.5 for glass
+        vec3 normal1 = normalize(texture2D(uTexture, uv).rgb);
+        vec3 normal2 = normalize(texture2D(uBackTexture, uv).rgb);
 
-        vec3 newPos = vPos.xyz + ray;
+        vec3 lightDir = normalize(uLight);
+        vec3 ray1 = refract(lightDir, normal1, 1.0/1.33); // uses snell's law  :D air to water use 1.5 for glass
+        vec3 midPos = vPos.xyz + (ray1 * 0.5);
+        vec3 ray2 = refract(ray1, normal2, 1.33);
+
+        // vec3 newPos = vPos.xyz + ray;
         vec3 oldPos = vPos.xyz;
+        vec3 newPos = midPos + ray2;
 
         float oldArea = length(cross((dFdx(oldPos)), (dFdy(oldPos))));
         float newArea = length(cross((dFdx(newPos)), (dFdy(newPos))));

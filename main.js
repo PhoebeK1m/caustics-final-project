@@ -42,13 +42,20 @@ const normalRenderTarget = new THREE.WebGLRenderTarget(2000, 2000, {
     magFilter: THREE.LinearFilter,
     minFilter: THREE.LinearFilter,
 });
+const backNormalRenderTarget = new THREE.WebGLRenderTarget(2000, 2000, {
+    type: THREE.HalfFloatType,
+    magFilter: THREE.LinearFilter,
+    minFilter: THREE.LinearFilter,
+});
+
+// Update the causticMap uniforms later in the script to accept two textures
 // create material for rgb normal
 const normalMaterial = new THREE.MeshNormalMaterial();
 
 // create a plane to view normals
 const normalPlaneGeometry = new THREE.PlaneGeometry(2, 2);
 const normalPlaneMaterial = new THREE.MeshBasicMaterial({ 
-    map: normalRenderTarget.texture 
+    map: normalRenderTarget.texture // only the front facing normal
 });
 const normalPlane = new THREE.Mesh(normalPlaneGeometry, normalPlaneMaterial);
 normalPlane.position.set(0,-3,0);
@@ -182,11 +189,20 @@ const tick = () => {
     }
     
     // change fbo
-    renderer.setRenderTarget(normalRenderTarget);
+    renderer.setRenderTarget(backNormalRenderTarget);
     renderer.setClearColor(0x000000, 1);
     renderer.clear();
     // render normals scene
     renderer.render(scene, normalCamera);
+
+    for (let i = 0; i < meshesToRender.length; i++) {
+        meshesToRender[i].material.side = THREE.FrontSide; 
+    }
+    renderer.setRenderTarget(normalRenderTarget);
+    renderer.setClearColor(0x000000, 1);
+    renderer.clear();
+    renderer.render(scene, normalCamera);
+
     normalPlane.visible = showNormalPlane;
     causticPlane.visible = showCausticPlane;
     
@@ -201,6 +217,7 @@ const tick = () => {
     // render caustics
     causticQuad.material = causticMap;
     causticQuad.material.uniforms.uTexture.value = normalRenderTarget.texture;
+    causticQuad.material.uniforms.uBackTexture.value = backNormalRenderTarget.texture;
     causticQuad.material.uniforms.uLight.value = spotLight.position;
     causticQuad.material.uniforms.uIntensity.value = intensity;
 
