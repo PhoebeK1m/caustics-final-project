@@ -10,9 +10,9 @@ const sizes = {
     height: window.innerHeight,
     halfWidth: window.innerWidth / 2
 };
-const camera = new THREE.PerspectiveCamera(75, sizes.halfWidth / sizes.height, 0.1, 1000);
+const camera = new THREE.PerspectiveCamera(65, sizes.halfWidth / sizes.height, 0.1, 1000);
 camera.position.z = 10; // set camera infront of object
-scene.background = new THREE.Color(0x4287f5);
+// scene.background = new THREE.Color(0x4287f5);
 
 // set render window half of screen
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
@@ -20,6 +20,23 @@ renderer.setSize(sizes.width, sizes.height);
 renderer.setScissorTest(true);
 renderer.setScissor(0, 0, sizes.halfWidth, sizes.height);
 renderer.setViewport(0, 0, sizes.halfWidth, sizes.height);
+
+// create hidden camera to render normals
+const normalCamera = new THREE.PerspectiveCamera(40, 1, 0.1, 1000);
+
+// create new render target (aka frame buffer object)
+const normalRenderTarget = new THREE.WebGLRenderTarget(2000, 2000);
+
+// create material for rgb normal
+const normalMaterial = new THREE.MeshNormalMaterial();
+
+// create a plane to view normals
+const normalPlaneGeometry = new THREE.PlaneGeometry(2, 2);
+const normalPlaneMaterial = new THREE.MeshBasicMaterial({ map: normalRenderTarget.texture });
+const normalPlane = new THREE.Mesh(normalPlaneGeometry, normalPlaneMaterial);
+normalPlane.position.set(0,-3,0);
+normalPlane.rotation.set(-Math.PI/2, 0,0);
+scene.add(normalPlane);
 
 // camera movement
 const controls = new OrbitControls(camera, canvas);
@@ -49,20 +66,20 @@ controls.enableDamping = true;
 //     }
 // );
 
-// sphere
-const spheregeometry = new THREE.SphereGeometry(1, 32, 32);
-const spherematerial = new THREE.MeshStandardMaterial({
+// knot
+const geometry = new THREE.TorusKnotGeometry(200, 40, 600, 16);
+const material = new THREE.MeshStandardMaterial({
     color: 0xa6baf5,
     transparent: true,
     opacity: 0.5
 });
-const sphere = new THREE.Mesh(spheregeometry, spherematerial);
-scene.add(sphere);
+const torusknot = new THREE.Mesh(geometry, material);
+torusknot.scale.setScalar(0.005);
+scene.add(torusknot);
 
 // light
 const spotLight = new THREE.SpotLight(0xffffff, 100); 
-spotLight.position.set(5, 10, 5);
-spotLight.angle = Math.PI / 6; 
+spotLight.position.set(0, 5, 0);
 spotLight.penumbra = 0.5;
 spotLight.decay = 2;
 
@@ -72,8 +89,29 @@ scene.add(spotLight);
 const tick = () => {
     // update controls for damping camera movement
     controls.update();
-
+    normalPlane.visible = false;
     // render
+    // update camera position with light
+    normalCamera.position.copy(spotLight.position);
+    normalCamera.lookAt(torusknot.position);
+
+    // use normals for material
+    const originalMaterial = torusknot.material;
+    torusknot.material = normalMaterial;
+    torusknot.material.side = THREE.BackSide;
+    
+    // change fbo
+    renderer.setRenderTarget(normalRenderTarget);
+    renderer.setClearColor(0x000000, 1);
+    renderer.clear();
+    // render normals scene
+    renderer.render(scene, normalCamera);
+    normalPlane.visible = true;
+    
+    // set back to original material
+    renderer.setRenderTarget(null);
+    renderer.setClearColor(0x4287f5, 1);
+    torusknot.material = originalMaterial;
     renderer.render(scene, camera);
 
     // call tick again on the next frame
