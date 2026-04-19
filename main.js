@@ -66,7 +66,7 @@ controls.enableDamping = true;
 // geometry
 
 // // pickle
-// const loader = new GLTFLoader();
+const loader = new GLTFLoader();
 // let pickle;
 // loader.load(
 //     './models/pickle.glb',
@@ -82,6 +82,23 @@ controls.enableDamping = true;
 //         console.error('an error occured while loading model:', error);
 //     }
 // );
+
+// juice
+let juice;
+loader.load(
+    './models/juice.glb',
+    (gltf) => {
+        juice = gltf.scene;
+        scene.add(juice);        
+        juice.scale.set(1, 1, 1);
+    },
+    (progress) => {
+        console.log('progress:', (progress.loaded / progress.total * 100) + '%');
+    },
+    (error) => {
+        console.error('an error occured while loading model:', error);
+    }
+);
 
 // knot
 const geometry = new THREE.TorusKnotGeometry(200, 40, 600, 16);
