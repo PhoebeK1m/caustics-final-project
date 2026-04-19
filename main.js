@@ -3,12 +3,13 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { FullScreenQuad } from 'three/addons/postprocessing/Pass.js';
 
-import { getCausticMaterial } from "./materials.js";
+import { getCausticMap, getCausticMaterial } from "./materials.js";
 
 let showNormalPlane = false;
 let showCausticPlane = true;
 let showJuice = false;
-let intensity = 1.5;
+let intensity = 3;
+let chromaticAberration = 0.2;
 const meshesToRender = [];
 const meshMaterials = [];
 
@@ -54,8 +55,12 @@ normalPlane.rotation.set(-Math.PI/2, 0,0);
 scene.add(normalPlane);
 
 // create new render target for caustic map
-const causticRenderTarget = new THREE.WebGLRenderTarget(2000, 2000);
+const causticRenderTarget = new THREE.WebGLRenderTarget(2000, 2000, {
+    alpha: true,
+    format: THREE.RGBAFormat
+});
 // get material for caustics
+const causticMap = getCausticMap();
 const causticMaterial = getCausticMaterial();
 const causticQuad = new FullScreenQuad();
 
@@ -134,11 +139,7 @@ meshMaterials.push(material);
 
 // caustics plane
 const causticPlaneGeometry = new THREE.PlaneGeometry(2, 2);
-const causticPlaneMaterial = new THREE.MeshBasicMaterial({ 
-    map: causticRenderTarget.texture, 
-    // transparent: true 
-});
-const causticPlane = new THREE.Mesh(causticPlaneGeometry, causticPlaneMaterial);
+const causticPlane = new THREE.Mesh(causticPlaneGeometry, causticMaterial);
 causticPlane.position.set(0,-3,0);
 causticPlane.rotation.set(-Math.PI/2, 0,0);
 scene.add(causticPlane);
@@ -186,12 +187,21 @@ const tick = () => {
         meshesToRender[i].material = meshMaterials[i];
     }
 
-    causticQuad.material = causticMaterial;
+    // render caustics
+    causticQuad.material = causticMap;
     causticQuad.material.uniforms.uTexture.value = normalRenderTarget.texture;
     causticQuad.material.uniforms.uLight.value = spotLight.position;
     causticQuad.material.uniforms.uIntensity.value = intensity;
+
+    // put fbo onto plane
     renderer.setRenderTarget(causticRenderTarget);
+    renderer.setClearColor(0x000000, 0);
+    renderer.clear();
+    // by using the quads (actually 2 triangles) to find caustics (using area)
     causticQuad.render(renderer);
+
+    causticPlane.material.uniforms.uTexture.value = causticRenderTarget.texture;
+    causticPlane.material.uniforms.uAberration.value = chromaticAberration;
 
     renderer.setRenderTarget(null);
     renderer.setClearColor(0x4287f5, 1);

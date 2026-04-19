@@ -1,5 +1,5 @@
 export const causticVertexShader = `
-    // precision mediump float;
+    precision mediump float;
     varying vec2 vUV;
     varying vec3 vPos;
 
@@ -11,8 +11,8 @@ export const causticVertexShader = `
     }
 `;
 
-export const causticFragmentShader = `
-    // precision mediump float;
+export const causticMapFragmentShader = `
+    precision mediump float;
     varying vec2 vUV;
     varying vec3 vPos;
 
@@ -38,5 +38,77 @@ export const causticFragmentShader = `
         scale = pow(scale, 4.0);
 
         gl_FragColor = vec4(vec3(scale), 1.0);
+    }
+`;
+
+export const causticMaterialFragmentShader = `
+    precision mediump float;
+    uniform sampler2D uTexture;
+    uniform float uAberration;
+
+    varying vec2 vUV;
+
+    const int SAMPLES = 16;
+
+    float random(vec2 p){
+        return fract(sin(dot(p.xy ,vec2(12.9898,78.233))) * 43758.5453);
+    }
+
+    vec3 sat(vec3 rgb, float adjustment) {
+        const vec3 W = vec3(0.2125, 0.7154, 0.0721);
+        vec3 intensity = vec3(dot(rgb, W));
+        return mix(intensity, rgb, adjustment);
+    }
+
+    void main() {
+        vec2 uv = vUV;
+        vec4 color = vec4(0.0);
+        
+        vec3 refractCol = vec3(0.0);
+
+        float flip = -0.5;
+
+        for ( int i = 0; i < SAMPLES; i ++ ) {
+            float noiseIntensity = 0.01; 
+            float noise = random(uv) * noiseIntensity;
+
+            // 4 point aberration from heckel
+            float slide = float(i) / float(SAMPLES) * 0.1 + noise;
+            // float mult = i % 2 == 0 ? 1.0 : -1.0;
+            // flip *= mult;
+            // vec2 dir = i % 2 == 0 ? vec2(flip, 0.0) : vec2(0.0, flip);
+
+            // circular abberation
+            // float angle = float(i) / float(SAMPLES) * 6.2831853;
+            // vec2 dir = vec2(cos(angle), sin(angle));
+            // dir *= vec2(2.0, 0.3);
+
+            // astigmatism abberation
+            vec2 dir;
+            int m = i % 4;
+            if (m == 0) dir = vec2(1.0, 0.0);   // +X
+            if (m == 1) dir = vec2(-1.0, 0.0);  // -X
+            if (m == 2) dir = vec2(0.0, 1.0);   // +Y
+            if (m == 3) dir = vec2(0.0, -1.0);  // -Y
+            float xStrength = 2.0;
+            float yStrength = 0.3;
+            dir.x *= xStrength;
+            dir.y *= yStrength;
+
+        
+            refractCol.r += texture2D(uTexture, uv + (uAberration * slide * dir * 1.0) ).r;
+            refractCol.g += texture2D(uTexture, uv + (uAberration * slide * dir * 2.0) ).g;
+            refractCol.b += texture2D(uTexture, uv + (uAberration * slide * dir * 3.0) ).b;
+        }
+        // Divide by the number of layers to normalize colors (rgb values can be worth up to the value of SAMPLES)
+        refractCol /= float(SAMPLES);
+        refractCol = sat(refractCol, 1.33);
+
+        color = vec4(refractCol.r, refractCol.g, refractCol.b, 1.0);
+
+        gl_FragColor = vec4(color.rgb, 1.0);
+
+        #include <tonemapping_fragment>
+        #include <colorspace_fragment>
     }
 `;

@@ -1,7 +1,7 @@
 import * as THREE from "three";
-import { causticVertexShader, causticFragmentShader } from "./shaders.js";
+import { causticVertexShader, causticMapFragmentShader, causticMaterialFragmentShader } from "./shaders.js";
 
-export const getCausticMaterial = (initTexture, initialLightPos, initialIntensity) => {
+export const getCausticMap = () => {
     return new THREE.ShaderMaterial({
         uniforms: {
             uTexture: { value: null },
@@ -9,6 +9,21 @@ export const getCausticMaterial = (initTexture, initialLightPos, initialIntensit
             uIntensity: { value: 1.0 },
         },
         vertexShader: causticVertexShader,
-        fragmentShader: causticFragmentShader
+        fragmentShader: causticMapFragmentShader
+    });
+};
+
+export const getCausticMaterial = () => {
+    return new THREE.ShaderMaterial({
+        uniforms: {
+            uLight: { value: new THREE.Vector2(0, 0, 0) },
+            uTexture: { value: null },
+            uAberration: { value: 0.02 },
+        },
+        vertexShader: causticVertexShader,
+        fragmentShader: causticMaterialFragmentShader,
+        transparent: true,
+        blending: THREE.AdditiveBlending,
+        side: THREE.DoubleSide 
     });
 };
