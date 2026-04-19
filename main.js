@@ -9,7 +9,7 @@ let showNormalPlane = false;
 let showCausticPlane = true;
 let showJuice = false;
 let showChromatic = true;
-let intensity = 3.5;
+let intensity = 0.5;
 let chromaticAberration = 0.2;
 const meshesToRender = [];
 const meshMaterials = [];
@@ -195,8 +195,8 @@ const tick = () => {
         meshesToRender[i].material = meshMaterials[i];
     }
     // film
-    // torusknot.rotation.x += 0.005;
-    // torusknot.rotation.y += 0.01;
+    torusknot.rotation.x += 0.005;
+    torusknot.rotation.y += 0.01;
 
     // render caustics
     causticQuad.material = causticMap;

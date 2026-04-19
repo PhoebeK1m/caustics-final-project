@@ -30,8 +30,8 @@ export const causticMapFragmentShader = `
         vec3 newPos = vPos.xyz + ray;
         vec3 oldPos = vPos.xyz;
 
-        float oldArea = length(dFdx(oldPos)) * length(dFdy(oldPos));
-        float newArea = length(dFdx(newPos)) * length(dFdy(newPos));
+        float oldArea = length(cross((dFdx(oldPos)), (dFdy(oldPos))));
+        float newArea = length(cross((dFdx(newPos)), (dFdy(newPos))));
 
         float color = oldArea / newArea;
         float scale = clamp(color, 0.0, 1.0) * uIntensity;
@@ -49,7 +49,7 @@ export const causticMaterialFragmentShader = `
 
     varying vec2 vUV;
 
-    const int SAMPLES = 16;
+    const int SAMPLES = 36;
 
     float random(vec2 p){
         return fract(sin(dot(p.xy ,vec2(12.9898,78.233))) * 43758.5453);
@@ -92,7 +92,7 @@ export const causticMaterialFragmentShader = `
             if (m == 2) dir = vec2(0.0, 1.0);   // +Y
             if (m == 3) dir = vec2(0.0, -1.0);  // -Y
             float xStrength = 1.5;
-            float yStrength = 0.3;
+            float yStrength = 0.5;
             dir.x *= xStrength;
             dir.y *= yStrength;
 
