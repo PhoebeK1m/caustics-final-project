@@ -51,8 +51,9 @@ const normalPlaneMaterial = new THREE.MeshBasicMaterial({
     map: normalRenderTarget.texture 
 });
 const normalPlane = new THREE.Mesh(normalPlaneGeometry, normalPlaneMaterial);
-normalPlane.position.set(0,-3,0);
-normalPlane.rotation.set(-Math.PI/2, 0,0);
+// normalPlane.position.set(0,-3,0);
+// normalPlane.rotation.set(-Math.PI/2, 0,0);
+normalPlane.scale.set(5,5);
 scene.add(normalPlane);
 
 // create new render target for caustic map
@@ -77,28 +78,34 @@ controls.enableDamping = true;
 
 // // pickle
 const loader = new GLTFLoader();
-// let pickle;
-// loader.load(
-//     './models/pickle.glb',
-//     (gltf) => {
-//         pickle = gltf.scene;
-//         scene.add(pickle);        
-//         pickle.scale.set(1, 1, 1);
-//     },
-//     (progress) => {
-//         console.log('progress:', (progress.loaded / progress.total * 100) + '%');
-//     },
-//     (error) => {
-//         console.error('an error occured while loading model:', error);
-//     }
-// );
+let pickle;
+loader.load(
+    './models/pickle.glb',
+    (gltf) => {
+        pickle = gltf.scene;
+        scene.add(pickle);        
+        pickle.scale.set(1, 1, 1);
+    },
+    (progress) => {
+        console.log('progress:', (progress.loaded / progress.total * 100) + '%');
+    },
+    (error) => {
+        console.error('an error occured while loading model:', error);
+    }
+);
 
 // juice
 let juice;
-const juicematerial = new THREE.MeshStandardMaterial({
+const juicematerial = new THREE.MeshPhysicalMaterial({
+    color: new THREE.Color("#a9c22f"),
+    roughness: 0.05,
+    metalness: 0,
+    transmission: 1.0,
+    thickness: 1.0,
+    ior: 1.33,
     transparent: true,
     opacity: 0.5,
-    color: "#ffffff",
+    envMapIntensity: 1.5,
 });
 
 loader.load(
@@ -127,10 +134,16 @@ loader.load(
 
 // knot
 const geometry = new THREE.TorusKnotGeometry(200, 40, 600, 16);
-const material = new THREE.MeshStandardMaterial({
+const material = new THREE.MeshPhysicalMaterial({
+    color: new THREE.Color("#fffff"),
+    roughness: 0.05,
+    metalness: 0,
+    transmission: 1.0,
+    thickness: 1.0,
+    ior: 1.33,
     transparent: true,
-    opacity: 0.5,
-    color: "#ffffff",
+    opacity: 0.29,
+    envMapIntensity: 1.5,
 });
 const torusknot = new THREE.Mesh(geometry, material);
 torusknot.scale.setScalar(0.005);
@@ -141,7 +154,7 @@ meshMaterials.push(material);
 // caustics plane
 const causticPlaneGeometry = new THREE.PlaneGeometry(2, 2);
 const causticPlane = new THREE.Mesh(causticPlaneGeometry, causticMaterial);
-causticPlane.position.set(0,-3,0);
+causticPlane.position.set(0,-2,0);
 causticPlane.rotation.set(-Math.PI/2, 0,0);
 scene.add(causticPlane);
 
@@ -161,6 +174,7 @@ const tick = () => {
     controls.update();
     normalPlane.visible = false;
     causticPlane.visible = false;
+    torusknot.visible = true;
 
     // find caustic center
     const lightDir = spotLight.position.clone().normalize();
@@ -189,6 +203,7 @@ const tick = () => {
     renderer.render(scene, normalCamera);
     normalPlane.visible = showNormalPlane;
     causticPlane.visible = showCausticPlane;
+    torusknot.visible = showCausticPlane;
     
     // set back to original material
     for (let i = 0; i < meshesToRender.length; i++) {
@@ -197,6 +212,9 @@ const tick = () => {
     // film here
     torusknot.rotation.x += 0.005;
     torusknot.rotation.y += 0.01;
+    // if (pickle) {
+    //     pickle.rotation.y += 0.01;
+    // }
 
     // render caustics
     causticQuad.material = causticMap;
@@ -223,7 +241,8 @@ const tick = () => {
     causticPlane.material.uniforms.uChromatic.value = showChromatic;
 
     renderer.setRenderTarget(null);
-    renderer.setClearColor(0x4287f5, 1);
+    // renderer.setClearColor(0x4287f5, 1);
+    renderer.setClearColor(0x7ea1bf, 1);
 
     renderer.render(scene, camera);
 
