@@ -51,9 +51,9 @@ const normalPlaneMaterial = new THREE.MeshBasicMaterial({
     map: normalRenderTarget.texture 
 });
 const normalPlane = new THREE.Mesh(normalPlaneGeometry, normalPlaneMaterial);
-// normalPlane.position.set(0,-3,0);
-// normalPlane.rotation.set(-Math.PI/2, 0,0);
-normalPlane.scale.set(5,5);
+normalPlane.position.set(0,-3,0);
+normalPlane.rotation.set(-Math.PI/2, 0,0);
+normalPlane.scale.set(2,2);
 scene.add(normalPlane);
 
 // create new render target for caustic map
@@ -78,21 +78,21 @@ controls.enableDamping = true;
 
 // // pickle
 const loader = new GLTFLoader();
-let pickle;
-loader.load(
-    './models/pickle.glb',
-    (gltf) => {
-        pickle = gltf.scene;
-        scene.add(pickle);        
-        pickle.scale.set(1, 1, 1);
-    },
-    (progress) => {
-        console.log('progress:', (progress.loaded / progress.total * 100) + '%');
-    },
-    (error) => {
-        console.error('an error occured while loading model:', error);
-    }
-);
+// let pickle;
+// loader.load(
+//     './models/pickle.glb',
+//     (gltf) => {
+//         pickle = gltf.scene;
+//         scene.add(pickle);        
+//         pickle.scale.set(1, 1, 1);
+//     },
+//     (progress) => {
+//         console.log('progress:', (progress.loaded / progress.total * 100) + '%');
+//     },
+//     (error) => {
+//         console.error('an error occured while loading model:', error);
+//     }
+// );
 
 // juice
 let juice;
@@ -135,7 +135,7 @@ loader.load(
 // knot
 const geometry = new THREE.TorusKnotGeometry(200, 40, 600, 16);
 const material = new THREE.MeshPhysicalMaterial({
-    color: new THREE.Color("#fffff"),
+    color: new THREE.Color("#5b9cd9"),
     roughness: 0.05,
     metalness: 0,
     transmission: 1.0,
@@ -174,7 +174,6 @@ const tick = () => {
     controls.update();
     normalPlane.visible = false;
     causticPlane.visible = false;
-    torusknot.visible = true;
 
     // find caustic center
     const lightDir = spotLight.position.clone().normalize();
@@ -203,7 +202,6 @@ const tick = () => {
     renderer.render(scene, normalCamera);
     normalPlane.visible = showNormalPlane;
     causticPlane.visible = showCausticPlane;
-    torusknot.visible = showCausticPlane;
     
     // set back to original material
     for (let i = 0; i < meshesToRender.length; i++) {
@@ -212,9 +210,6 @@ const tick = () => {
     // film here
     torusknot.rotation.x += 0.005;
     torusknot.rotation.y += 0.01;
-    // if (pickle) {
-    //     pickle.rotation.y += 0.01;
-    // }
 
     // render caustics
     causticQuad.material = causticMap;
