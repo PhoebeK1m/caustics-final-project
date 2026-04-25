@@ -33,18 +33,14 @@ const scene = new THREE.Scene();
 const sizes = {
     width: window.innerWidth,
     height: window.innerHeight,
-    halfWidth: window.innerWidth / 2
 };
-const camera = new THREE.PerspectiveCamera(65, sizes.halfWidth / sizes.height, 0.1, 1000);
+const camera = new THREE.PerspectiveCamera(65, sizes.width / sizes.height, 0.1, 1000);
 camera.position.z = 10; // set camera infront of object
-// scene.background = new THREE.Color(0x4287f5);
 
 // set render window half of screen
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+renderer.setPixelRatio(window.devicePixelRatio);
 renderer.setSize(sizes.width, sizes.height);
-renderer.setScissorTest(true);
-renderer.setScissor(0, 0, sizes.halfWidth, sizes.height);
-renderer.setViewport(0, 0, sizes.halfWidth, sizes.height);
 
 // create hidden camera to render normals
 const normalCamera = new THREE.PerspectiveCamera(55, 1, 0.1, 1000);
