@@ -4,13 +4,26 @@ import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { FullScreenQuad } from 'three/addons/postprocessing/Pass.js';
 
 import { getCausticMap, getCausticMaterial } from "./materials.js";
+import GUI from 'lil-gui';
 
-let showNormalPlane = false;
-let showCausticPlane = true;
-let showJuice = false;
-let showChromatic = true;
-let intensity = 0.5;
-let chromaticAberration = 0.2;
+const gui = new GUI();
+
+let gui_params = {
+	showNormalPlane: false,
+    showCausticPlane: true,
+    showJuice: false,
+    showChromatic: true,
+    intensity: 0.5,
+    chromaticAberration: 0.2
+};
+
+gui.add(gui_params, 'showNormalPlane');
+gui.add(gui_params, 'showCausticPlane');
+gui.add(gui_params, 'showJuice');
+gui.add(gui_params, 'showChromatic');
+gui.add(gui_params, 'intensity', 0, 3);
+gui.add(gui_params, 'chromaticAberration', 0, 3);
+
 const meshesToRender = [];
 const meshMaterials = [];
 
@@ -190,7 +203,7 @@ const tick = () => {
         meshesToRender[i].material = normalMaterial;
         meshesToRender[i].material.side = THREE.BackSide;
         if (i > 0) {
-            meshesToRender[i].visible = showJuice;
+            meshesToRender[i].visible = gui_params.showJuice;
         }
     }
     
@@ -200,8 +213,8 @@ const tick = () => {
     renderer.clear();
     // render normals scene
     renderer.render(scene, normalCamera);
-    normalPlane.visible = showNormalPlane;
-    causticPlane.visible = showCausticPlane;
+    normalPlane.visible = gui_params.showNormalPlane;
+    causticPlane.visible =gui_params.showCausticPlane;
     
     // set back to original material
     for (let i = 0; i < meshesToRender.length; i++) {
@@ -215,7 +228,7 @@ const tick = () => {
     causticQuad.material = causticMap;
     causticQuad.material.uniforms.uTexture.value = normalRenderTarget.texture;
     causticQuad.material.uniforms.uLight.value = spotLight.position;
-    causticQuad.material.uniforms.uIntensity.value = intensity;
+    causticQuad.material.uniforms.uIntensity.value = gui_params.intensity;
 
     // put fbo onto plane
     renderer.setRenderTarget(causticRenderTarget);
@@ -232,8 +245,8 @@ const tick = () => {
     );
     causticPlane.scale.setScalar(radius * scaleCorrection);
     causticPlane.material.uniforms.uTexture.value = causticRenderTarget.texture;
-    causticPlane.material.uniforms.uAberration.value = chromaticAberration;
-    causticPlane.material.uniforms.uChromatic.value = showChromatic;
+    causticPlane.material.uniforms.uAberration.value = gui_params.chromaticAberration;
+    causticPlane.material.uniforms.uChromatic.value = gui_params.showChromatic;
 
     renderer.setRenderTarget(null);
     // renderer.setClearColor(0x4287f5, 1);
@@ -246,25 +259,6 @@ const tick = () => {
 };
 
 tick();
-
-window.addEventListener('keydown', (event) => {
-    if (event.key.toLowerCase() === 'n') {
-        showNormalPlane = !showNormalPlane;
-        showCausticPlane = !showCausticPlane;
-    }
-});
-
-window.addEventListener('keydown', (event) => {
-    if (event.key.toLowerCase() === 'j') {
-        showJuice = !showJuice;
-    }
-});
-
-window.addEventListener('keydown', (event) => {
-    if (event.key.toLowerCase() === 'c') {
-        showChromatic = !showChromatic;
-    }
-});
 
 function computeCausticsBounds(object, lightDir) {
     bounds.setFromObject(object, true);
