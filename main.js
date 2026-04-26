@@ -1,11 +1,12 @@
 import * as THREE from 'three';
+import GUI from 'lil-gui';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
-import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { FullScreenQuad } from 'three/addons/postprocessing/Pass.js';
 
 import { getCausticMap, getCausticMaterial } from "./materials.js";
-import GUI from 'lil-gui';
+import { torusknot, torusmaterial, loadJuice, juicematerial } from "./objects.js";
 
+// gui code and global parameters
 const gui = new GUI();
 
 let gui_params = {
@@ -24,8 +25,9 @@ gui.add(gui_params, 'showChromatic');
 gui.add(gui_params, 'intensity', 0, 3);
 gui.add(gui_params, 'chromaticAberration', 0, 3);
 
-const meshesToRender = [];
-const meshMaterials = [];
+// scene objects and materials
+const meshesToRender = new Map();
+const meshMaterials = new Map();
 
 // set up webgl/three scene
 const canvas = document.querySelector('canvas.webgl');
@@ -85,80 +87,15 @@ controls.enableDamping = true;
 
 // geometry
 
-// // pickle
-const loader = new GLTFLoader();
-// let pickle;
-// loader.load(
-//     './models/pickle.glb',
-//     (gltf) => {
-//         pickle = gltf.scene;
-//         scene.add(pickle);        
-//         pickle.scale.set(1, 1, 1);
-//     },
-//     (progress) => {
-//         console.log('progress:', (progress.loaded / progress.total * 100) + '%');
-//     },
-//     (error) => {
-//         console.error('an error occured while loading model:', error);
-//     }
-// );
-
-// juice
-let juice;
-const juicematerial = new THREE.MeshPhysicalMaterial({
-    color: new THREE.Color("#a9c22f"),
-    roughness: 0.05,
-    metalness: 0,
-    transmission: 1.0,
-    thickness: 1.0,
-    ior: 1.33,
-    transparent: true,
-    opacity: 0.5,
-    envMapIntensity: 1.5,
-});
-
-loader.load(
-    './models/juice1.glb',
-    (gltf) => {
-        juice = gltf.scene;
-
-        juice.traverse((node) => {
-            if (node.isMesh) {
-                node.geometry.computeVertexNormals();
-                node.material = juicematerial;
-                meshesToRender.push(node);
-                meshMaterials.push(juicematerial);
-            }
-        });
-        scene.add(juice);        
-        juice.scale.set(1, 1, 1);
-    },
-    (progress) => {
-        console.log('progress:', (progress.loaded / progress.total * 100) + '%');
-    },
-    (error) => {
-        console.error('an error occured while loading model:', error);
-    }
-);
-
-// knot
-const geometry = new THREE.TorusKnotGeometry(200, 40, 600, 16);
-const material = new THREE.MeshPhysicalMaterial({
-    color: new THREE.Color("#5b9cd9"),
-    roughness: 0.05,
-    metalness: 0,
-    transmission: 1.0,
-    thickness: 1.0,
-    ior: 1.33,
-    transparent: true,
-    opacity: 0.29,
-    envMapIntensity: 1.5,
-});
-const torusknot = new THREE.Mesh(geometry, material);
-torusknot.scale.setScalar(0.005);
 scene.add(torusknot);
-meshesToRender.push(torusknot);
-meshMaterials.push(material);
+meshesToRender.set("torus", torusknot);
+meshMaterials.set("torus", torusmaterial);
+const loaded = await loadJuice(juicematerial);
+console.log(loaded);
+const {juice, juicemesh} = loaded;
+scene.add(juice);
+meshesToRender.set("juice", juicemesh);
+meshMaterials.set("juice", juicematerial);
 
 // caustics plane
 const causticPlaneGeometry = new THREE.PlaneGeometry(2, 2);
@@ -195,11 +132,17 @@ const tick = () => {
     normalCamera.lookAt(torusknot.position);
 
     // use normals for material
-    for (let i = 0; i < meshesToRender.length; i++) {
-        meshesToRender[i].material = normalMaterial;
-        meshesToRender[i].material.side = THREE.BackSide;
-        if (i > 0) {
-            meshesToRender[i].visible = gui_params.showJuice;
+    // for (let i = 0; i < meshesToRender.length; i++) {
+    for (const [name, mesh] of meshesToRender) {
+        if (!mesh) {
+            console.warn(`Missing mesh for ${name}`);
+            continue;
+        }
+        mesh.material = normalMaterial;
+        mesh.material.side = THREE.BackSide;
+        // meshesToRender.get("juice").visible = gui_params.showJuice;
+        if (name == "juice") {
+            mesh.visible = gui_params.showJuice;
         }
     }
     
@@ -213,8 +156,8 @@ const tick = () => {
     causticPlane.visible =gui_params.showCausticPlane;
     
     // set back to original material
-    for (let i = 0; i < meshesToRender.length; i++) {
-        meshesToRender[i].material = meshMaterials[i];
+    for (const [name, mesh] of meshesToRender) {
+        mesh.material = meshMaterials.get(name);
     }
     // film here
     torusknot.rotation.x += 0.005;
@@ -256,6 +199,7 @@ const tick = () => {
 
 tick();
 
+// project of caustic to ground will get rid of with raymarching
 function computeCausticsBounds(object, lightDir) {
     bounds.setFromObject(object, true);
 
