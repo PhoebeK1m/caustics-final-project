@@ -1,10 +1,9 @@
 import * as THREE from 'three';
 import GUI from 'lil-gui';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
-import { FullScreenQuad } from 'three/addons/postprocessing/Pass.js';
-
-import { getCausticMap, getCausticMaterial } from "./materials.js";
 import { torusknot, torusmaterial, loadJuice, juicematerial } from "./objects.js";
+import { normalCamera, normalRenderTarget, normalMaterial, normalPlane } from './rendertarget/normalRenderTargets.js';
+import { causticRenderTarget, causticMap, causticQuad, causticPlane } from './rendertarget/causticRenderTargets.js';
 
 // gui code and global parameters
 const gui = new GUI();
@@ -44,39 +43,6 @@ const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
 renderer.setPixelRatio(window.devicePixelRatio);
 renderer.setSize(sizes.width, sizes.height);
 
-// create hidden camera to render normals
-const normalCamera = new THREE.PerspectiveCamera(55, 1, 0.1, 1000);
-
-// create new render target (aka frame buffer object) for normals
-const normalRenderTarget = new THREE.WebGLRenderTarget(2000, 2000, {
-    type: THREE.HalfFloatType,
-    magFilter: THREE.LinearFilter,
-    minFilter: THREE.LinearFilter,
-});
-// create material for rgb normal
-const normalMaterial = new THREE.MeshNormalMaterial();
-
-// create a plane to view normals
-const normalPlaneGeometry = new THREE.PlaneGeometry(2, 2);
-const normalPlaneMaterial = new THREE.MeshBasicMaterial({ 
-    map: normalRenderTarget.texture 
-});
-const normalPlane = new THREE.Mesh(normalPlaneGeometry, normalPlaneMaterial);
-normalPlane.position.set(0,-3,0);
-normalPlane.rotation.set(-Math.PI/2, 0,0);
-normalPlane.scale.set(2,2);
-scene.add(normalPlane);
-
-// create new render target for caustic map
-const causticRenderTarget = new THREE.WebGLRenderTarget(2000, 2000, {
-    alpha: true,
-    format: THREE.RGBAFormat
-});
-// get material for caustics
-const causticMap = getCausticMap();
-const causticMaterial = getCausticMaterial();
-const causticQuad = new FullScreenQuad();
-
 // camera movement
 const controls = new OrbitControls(camera, canvas);
 const fixedRadius = 10;
@@ -86,22 +52,18 @@ controls.enableZoom = false;
 controls.enableDamping = true;
 
 // geometry
-
 scene.add(torusknot);
 meshesToRender.set("torus", torusknot);
 meshMaterials.set("torus", torusmaterial);
 const loaded = await loadJuice(juicematerial);
-console.log(loaded);
 const {juice, juicemesh} = loaded;
 scene.add(juice);
 meshesToRender.set("juice", juicemesh);
 meshMaterials.set("juice", juicematerial);
 
+// normal plane
+scene.add(normalPlane);
 // caustics plane
-const causticPlaneGeometry = new THREE.PlaneGeometry(2, 2);
-const causticPlane = new THREE.Mesh(causticPlaneGeometry, causticMaterial);
-causticPlane.position.set(0,-2,0);
-causticPlane.rotation.set(-Math.PI/2, 0,0);
 scene.add(causticPlane);
 
 // light
@@ -109,7 +71,6 @@ const spotLight = new THREE.SpotLight(0xffffff, 100);
 spotLight.position.set(0, 5, 0);
 spotLight.penumbra = 0.5;
 spotLight.decay = 2;
-
 scene.add(spotLight);
 
 const bounds = new THREE.Box3();
