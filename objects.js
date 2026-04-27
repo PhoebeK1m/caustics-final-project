@@ -51,7 +51,9 @@ export const torusmaterial = new THREE.MeshPhysicalMaterial({
 });
 
 export const torusknot = new THREE.Mesh(geometry, torusmaterial);
+export const torusknot1 = new THREE.Mesh(geometry, torusmaterial);
 torusknot.scale.setScalar(0.005);
+torusknot1.scale.setScalar(0.005);
 
 // let pickle;
 // loader.load(

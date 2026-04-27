@@ -1,9 +1,10 @@
 import * as THREE from 'three';
 import GUI from 'lil-gui';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
-import { torusknot, torusmaterial, loadJuice, juicematerial } from "./objects.js";
+import { torusknot, torusmaterial, loadJuice, juicematerial, torusknot1 } from "./objects.js";
 import { normalCamera, normalRenderTarget, normalMaterial, normalPlane } from './rendertarget/normalRenderTargets.js';
-import { causticRenderTarget, causticMap, causticQuad, causticPlane } from './rendertarget/causticRenderTargets.js';
+import { causticRenderTarget, causticMap, causticQuad, causticPlane, causticMaterial } from './rendertarget/causticRenderTargets.js';
+import { depthRenderTarget, depthMaterial, depthPlane } from './rendertarget/depthRenderTargets.js';
 
 // gui code and global parameters
 const gui = new GUI();
@@ -11,6 +12,7 @@ const gui = new GUI();
 let gui_params = {
 	showNormalPlane: false,
     showCausticPlane: true,
+    showDepthPlane: false,
     showJuice: false,
     showChromatic: true,
     intensity: 0.5,
@@ -19,6 +21,7 @@ let gui_params = {
 
 gui.add(gui_params, 'showNormalPlane');
 gui.add(gui_params, 'showCausticPlane');
+gui.add(gui_params, 'showDepthPlane');
 gui.add(gui_params, 'showJuice');
 gui.add(gui_params, 'showChromatic');
 gui.add(gui_params, 'intensity', 0, 3);
@@ -60,11 +63,15 @@ const {juice, juicemesh} = loaded;
 scene.add(juice);
 meshesToRender.set("juice", juicemesh);
 meshMaterials.set("juice", juicematerial);
+scene.add(torusknot1);
+torusknot1.position.set(0,-5,0);
 
 // normal plane
 scene.add(normalPlane);
 // caustics plane
 scene.add(causticPlane);
+//depth plane 
+scene.add(depthPlane);
 
 // light
 const spotLight = new THREE.SpotLight(0xffffff, 100); 
@@ -111,18 +118,43 @@ const tick = () => {
     renderer.setRenderTarget(normalRenderTarget);
     renderer.setClearColor(0x000000, 1);
     renderer.clear();
+
     // render normals scene
     renderer.render(scene, normalCamera);
     normalPlane.visible = gui_params.showNormalPlane;
     causticPlane.visible =gui_params.showCausticPlane;
+    depthPlane.visible = gui_params.showDepthPlane;
     
     // set back to original material
     for (const [name, mesh] of meshesToRender) {
         mesh.material = meshMaterials.get(name);
     }
-    // film here
+    
+    // rotate geometry
     torusknot.rotation.x += 0.005;
     torusknot.rotation.y += 0.01;
+    torusknot1.rotation.x += 0.005;
+    torusknot1.rotation.y += 0.01;
+
+    // render receiver depth from light view
+    for (const [name, mesh] of meshesToRender) {
+        mesh.visible = false;
+    }
+    depthPlane.visible = false;
+    torusknot1.material = depthMaterial;
+
+    renderer.setRenderTarget(depthRenderTarget);
+    renderer.setClearColor(0xffffff, 1);
+    renderer.clear();
+    renderer.render(scene, normalCamera);
+    depthPlane.visible = gui_params.showDepthPlane;
+    // restore
+    for (const [name, mesh] of meshesToRender) { 
+        mesh.visible = true;
+        if (name == "juice") {
+            mesh.visible = gui_params.showJuice;
+        }
+    };
 
     // render caustics
     causticQuad.material = causticMap;

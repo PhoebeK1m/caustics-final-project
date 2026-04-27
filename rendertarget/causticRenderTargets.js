@@ -12,7 +12,7 @@ export const causticRenderTarget = new THREE.WebGLRenderTarget(2000, 2000, {
 export const causticMap = getCausticMap();
 export const causticQuad = new FullScreenQuad();
 
-const causticMaterial = getCausticMaterial();
+export const causticMaterial = getCausticMaterial();
 const causticPlaneGeometry = new THREE.PlaneGeometry(2, 2);
 export const causticPlane = new THREE.Mesh(causticPlaneGeometry, causticMaterial);
 causticPlane.position.set(0,-2,0);
