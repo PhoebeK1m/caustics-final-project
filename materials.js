@@ -16,7 +16,7 @@ export const getCausticMap = () => {
 export const getCausticMaterial = () => {
     return new THREE.ShaderMaterial({
         uniforms: {
-            uLight: { value: new THREE.Vector2(0, 0, 0) },
+            uLight: { value: new THREE.Vector3(0, 0, 0) },
             uTexture: { value: null },
             uAberration: { value: 0.02 },
             uChromatic: { value: true }
