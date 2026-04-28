@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import GUI from 'lil-gui';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
-import { torusknot, torusmaterial, loadJuice, juicematerial, torusknot1 } from "./objects.js";
+import { torusknot, torusmaterial, loadJuice, juicematerial } from "./objects.js";
 import { normalCamera, normalRenderTarget, normalMaterial, normalPlane } from './rendertarget/normalRenderTargets.js';
 import { causticRenderTarget, causticMap, causticQuad, causticPlane, causticMaterial } from './rendertarget/causticRenderTargets.js';
 import { depthRenderTarget, depthMaterial, depthPlane } from './rendertarget/depthRenderTargets.js';
@@ -63,8 +63,14 @@ const {juice, juicemesh} = loaded;
 scene.add(juice);
 meshesToRender.set("juice", juicemesh);
 meshMaterials.set("juice", juicematerial);
-scene.add(torusknot1);
-torusknot1.position.set(0,-5,0);
+
+// scene plane
+const scenePlaneGeometry = new THREE.PlaneGeometry(2, 2);
+export const scenePlane = new THREE.Mesh(scenePlaneGeometry, depthMaterial);
+scenePlane.position.set(0,-5,0);
+scenePlane.rotation.set(-Math.PI/2, 0,0);
+scenePlane.scale.set(4,4);
+scene.add(scenePlane);
 
 // normal plane
 scene.add(normalPlane);
@@ -88,6 +94,7 @@ const tick = () => {
     controls.update();
     normalPlane.visible = false;
     causticPlane.visible = false;
+    scenePlane.visible = false;
 
     // find caustic center
     const lightDir = spotLight.position.clone().normalize();
@@ -122,7 +129,7 @@ const tick = () => {
     // render normals scene
     renderer.render(scene, normalCamera);
     normalPlane.visible = gui_params.showNormalPlane;
-    causticPlane.visible =gui_params.showCausticPlane;
+    causticPlane.visible = gui_params.showCausticPlane;
     depthPlane.visible = gui_params.showDepthPlane;
     
     // set back to original material
@@ -133,15 +140,13 @@ const tick = () => {
     // rotate geometry
     torusknot.rotation.x += 0.005;
     torusknot.rotation.y += 0.01;
-    torusknot1.rotation.x += 0.005;
-    torusknot1.rotation.y += 0.01;
 
     // render receiver depth from light view
     for (const [name, mesh] of meshesToRender) {
         mesh.visible = false;
     }
     depthPlane.visible = false;
-    torusknot1.material = depthMaterial;
+    scenePlane.visible = true;
 
     renderer.setRenderTarget(depthRenderTarget);
     renderer.setClearColor(0xffffff, 1);
