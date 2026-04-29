@@ -3,7 +3,7 @@ import { getCausticMap, getCausticMaterial, getReceiveCausticMaterial } from "..
 import { FullScreenQuad } from 'three/addons/postprocessing/Pass.js';
 
 // create new render target for caustic map
-export const causticRenderTarget = new THREE.WebGLRenderTarget(2000, 2000, {
+export const causticRenderTarget = new THREE.WebGLRenderTarget(2048, 2048, {
     alpha: true,
     format: THREE.RGBAFormat
 });
