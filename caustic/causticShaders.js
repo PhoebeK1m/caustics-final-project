@@ -197,3 +197,79 @@ export const receiveCausticMaterialFragmentShader = `
         gl_FragColor = vec4(texture2D(uCausticTexture, causticUV).rgb * 10.0, 1.0);
     }
 `;
+
+export const causticMeshVertexShader = `
+precision highp float;
+
+uniform sampler2D uWaterTexture;
+uniform vec3 uLightDir;
+uniform float uWaterSize;
+uniform float uFloorY;
+uniform float uIntensity;
+
+varying vec3 vOldPos;
+varying vec3 vNewPos;
+
+const float IOR_AIR = 1.0;
+const float IOR_WATER = 1.333;
+
+vec3 projectToFloor(vec3 origin, vec3 ray) {
+    float t = (uFloorY - origin.y) / ray.y;
+    return origin + ray * t;
+}
+
+void main() {
+    vec2 waterUV = uv;
+
+    // assuming your sim texture stores height in .r and slopes/normals in .ba like Evan
+    vec4 info = texture2D(uWaterTexture, waterUV);
+
+    vec3 localPos = position;
+    vec3 worldFlat = (modelMatrix * vec4(localPos, 1.0)).xyz;
+
+    vec3 worldWater = worldFlat;
+    worldWater.y += info.r;
+
+    // If info.ba are slopes:
+    vec2 slope = info.ba * 0.5;
+    vec3 normal = normalize(vec3(-slope.x, 1.0, -slope.y));
+
+    vec3 baseRay = refract(-normalize(uLightDir), vec3(0.0, 1.0, 0.0), IOR_AIR / IOR_WATER);
+    vec3 bentRay = refract(-normalize(uLightDir), normal, IOR_AIR / IOR_WATER);
+
+    vOldPos = projectToFloor(worldFlat, baseRay);
+    vNewPos = projectToFloor(worldWater, bentRay);
+
+    // Map floor xz into caustic texture clip space.
+    vec2 causticNDC = vNewPos.xz / (uWaterSize * 0.5);
+
+    gl_Position = vec4(causticNDC, 0.0, 1.0);
+}
+`;
+
+export const causticMeshFragmentShader = `
+precision highp float;
+
+uniform float uIntensity;
+
+varying vec3 vOldPos;
+varying vec3 vNewPos;
+
+void main() {
+    // float oldArea = length(cross(dFdx(vOldPos), dFdy(vOldPos)));
+    // float newArea = length(cross(dFdx(vNewPos), dFdy(vNewPos)));
+    float oldArea = length(dFdx(vOldPos)) * length(dFdy(vOldPos));
+    float newArea = length(dFdx(vNewPos)) * length(dFdy(vNewPos));
+
+    float ratio = oldArea / max(newArea, 1e-5);
+
+    // caustics are only the focused extra light above baseline
+    float focus = max(ratio - 1.0, 0.0);
+
+    // smoother gradient
+    float c = log(1.0 + focus * 2.0);
+    c = smoothstep(0.0, 1.5, c);
+
+    gl_FragColor = vec4(vec3(c * uIntensity), 1.0);
+}
+`;

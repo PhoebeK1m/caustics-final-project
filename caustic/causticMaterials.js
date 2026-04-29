@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { causticVertexShader, causticMapFragmentShader, causticMaterialFragmentShader, receiveCausticMaterialFragmentShader } from "./causticShaders.js";
+import { causticVertexShader, causticMapFragmentShader, causticMaterialFragmentShader, receiveCausticMaterialFragmentShader, causticMeshVertexShader, causticMeshFragmentShader } from "./causticShaders.js";
 
 export const getCausticMap = () => {
     return new THREE.ShaderMaterial({
@@ -57,3 +57,19 @@ export const getReceiveCausticMaterial = () => {
 
     return material;
 };
+
+export const causticMeshMaterial = new THREE.ShaderMaterial({
+    vertexShader: causticMeshVertexShader,
+    fragmentShader: causticMeshFragmentShader,
+    uniforms: {
+        uWaterTexture: { value: null },
+        uLightDir: { value: new THREE.Vector3() },
+        uWaterSize: { value: 10 },
+        uFloorY: { value: 0 },
+        uIntensity: { value: 1 },
+    },
+    depthWrite: false,
+    depthTest: false,
+    transparent: false,
+    side: THREE.DoubleSide,
+});

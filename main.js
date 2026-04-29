@@ -9,6 +9,7 @@ import { createEnvTexture, waterNormalDebugMaterial } from './water/waterMateria
 import { createWaterSimulation } from './water/waterMovement.js';
 import { createWaterObjects } from './water/waterObject.js';
 import { createWaterBallController } from './water/waterSimulation.js';
+import { causticMeshMaterial } from './caustic/causticMaterials.js';
 
 // gui code and global parameters
 const gui = new GUI();
@@ -17,7 +18,7 @@ let gui_params = {
 	showNormalPlane: true,
     showCausticPlane: true,
     showDepthPlane: true,
-    showWater: false,
+    showWater: true,
     showChromatic: true,
     intensity: 0.5,
     chromaticAberration: 0.03,
@@ -109,9 +110,9 @@ wall3.visible = false;
 wall4.visible = false;
 floor.material = depthMaterial;
 sceneMesh.set("floor", floor);
-scene.add(torusknot);
-meshesToRender.set("torus", torusknot);
-meshMaterials.set("torus", torusmaterial);
+// scene.add(torusknot);
+// meshesToRender.set("torus", torusknot);
+// meshMaterials.set("torus", torusmaterial);
 
 const waterBall = createWaterBallController({
     renderer,
@@ -200,23 +201,30 @@ const tick = () => {
         mesh.visible = true;
     }
 
-    // render caustics
-    causticQuad.material = causticMap;
-    causticQuad.material.uniforms.uTexture.value = normalRenderTarget.texture;
-    causticQuad.material.uniforms.uDepthTexture.value = depthRenderTarget.texture;
+    const oldMaterial = water.material;
+    const oldVisible = water.visible;
 
-    causticQuad.material.uniforms.uLight.value = spotLight.position;
-    causticQuad.material.uniforms.uIntensity.value = gui_params.intensity;
+    water.visible = true;
+    water.material = causticMeshMaterial;
 
-    causticQuad.material.uniforms.uLightMatrix.value
-        .multiplyMatrices(normalCamera.projectionMatrix, normalCamera.matrixWorldInverse);
+    causticMeshMaterial.uniforms.uWaterTexture.value = waterSim.getHeightmapTexture();
 
-    // put fbo onto plane
+    const lightDir = spotLight.position.clone().sub(water.position).normalize();
+    causticMeshMaterial.uniforms.uLightDir.value.copy(lightDir);
+
+    causticMeshMaterial.uniforms.uWaterSize.value = 10;
+    causticMeshMaterial.uniforms.uFloorY.value = floor.position.y;
+    causticMeshMaterial.uniforms.uIntensity.value = gui_params.intensity;
+
     renderer.setRenderTarget(causticRenderTarget);
-    renderer.setClearColor(0x000000, 0);
+    renderer.setClearColor(0x000000, 1);
     renderer.clear();
-    // by using the quads (actually 2 triangles) to find caustics (using area)
-    causticQuad.render(renderer);
+
+    renderer.render(water, normalCamera);
+
+    water.material = oldMaterial;
+    water.visible = oldVisible;
+
     causticPlane.material.uniforms.uTexture.value = causticRenderTarget.texture;
     causticPlane.material.uniforms.uAberration.value = gui_params.chromaticAberration;
     causticPlane.material.uniforms.uChromatic.value = gui_params.showChromatic;
