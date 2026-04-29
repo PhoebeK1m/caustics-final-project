@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { getCausticMap, getCausticMaterial, getReceiveCausticMaterial } from "../materials.js";
+import { getCausticMap, getCausticMaterial, getReceiveCausticMaterial } from "../caustic/causticMaterials.js";
 import { FullScreenQuad } from 'three/addons/postprocessing/Pass.js';
 
 // create new render target for caustic map
