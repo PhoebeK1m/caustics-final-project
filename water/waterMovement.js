@@ -12,7 +12,7 @@ export function createWaterSimulation({ renderer, size }) {
         data[i + 0] = 0; 
         data[i + 1] = 0;
         data[i + 2] = 0;
-        data[i + 3] = 1;
+        data[i + 3] = 0;
     }
 
     const waterVariable = gpu.addVariable('heightmap', simFragShader, waterTex);
@@ -23,6 +23,7 @@ export function createWaterSimulation({ renderer, size }) {
     waterVariable.material.uniforms.viscosity = { value: 0.995 };
     waterVariable.material.uniforms.waveStrength = { value: 2.0 };
     waterVariable.material.uniforms.rippleStrength = { value: 0.0 };
+    waterVariable.material.uniforms.slopeStrength = { value: 15.0 };
 
     const gpuError = gpu.init();
     if (gpuError) console.error(gpuError);

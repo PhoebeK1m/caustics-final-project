@@ -164,14 +164,13 @@ const tick = () => {
     for (const [name, mesh] of sceneMesh) {
         mesh.visible = false;
     }
-    
+    waterNormalDebugMaterial.uniforms.heightmap.value = waterSim.getHeightmapTexture();
     // change fbo
     renderer.setRenderTarget(normalRenderTarget);
     renderer.setClearColor(0x000000, 1);
     renderer.clear();
     // render normals scene
     renderer.render(scene, normalCamera);
-    waterNormalDebugMaterial.uniforms.heightmap.value = waterSim.getHeightmapTexture();
     
     // set back to original material
     for (const [name, mesh] of meshesToRender) {
