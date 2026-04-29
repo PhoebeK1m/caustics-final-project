@@ -19,7 +19,3 @@ export const depthPlane = new THREE.Mesh(depthPlaneGeometry, depthPlaneMaterial)
 depthPlane.position.set(-1.9, 0.82, -2);
 depthPlane.scale.set(0.35, 0.35, 1.0);
 depthPlane.renderOrder = 999;
-depthRenderTarget.texture.minFilter = THREE.LinearFilter;
-depthRenderTarget.texture.magFilter = THREE.LinearFilter;
-depthRenderTarget.texture.wrapS = THREE.ClampToEdgeWrapping;
-depthRenderTarget.texture.wrapT = THREE.ClampToEdgeWrapping;

@@ -71,8 +71,8 @@ export const causticMapFragmentShader = `
         vec3 normalTexture = texture2D(uTexture, uv).rgb;
         // vec3 normal = normalize(normalTexture);
         vec3 normal = normalize(texture2D(uTexture, uv).rgb * 2.0 - 1.0);
-        // vec3 lightDir = normalize(uLight);
-        vec3 lightDir = normalize(vPos - uLight);
+        vec3 lightDir = normalize(uLight);
+        // vec3 lightDir = normalize(vPos - uLight);
         vec3 ray = refract(lightDir, normal, 1.0/1.33); // uses snell's law  :D air to water use 1.5 for glass
 
         // vec3 newPos = vPos.xyz + ray;

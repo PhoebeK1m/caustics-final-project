@@ -17,8 +17,8 @@ export function createEnvTexture(scene) {
             console.log('Cube texture loaded:', texture);
             console.log('images:', texture.image); // should be array of 6
             console.log('image count:', texture.image.length);
-            scene.background = new THREE.Color(0x4387f5);
-            scene.environment = texture;
+            // scene.background = new THREE.Color(0x4387f5);
+            // scene.environment = texture;
         },
         undefined,
         (err) => {

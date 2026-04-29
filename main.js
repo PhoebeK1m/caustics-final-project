@@ -17,6 +17,7 @@ let gui_params = {
 	showNormalPlane: true,
     showCausticPlane: true,
     showDepthPlane: true,
+    showWater: false,
     showChromatic: true,
     intensity: 0.5,
     chromaticAberration: 0.03,
@@ -25,6 +26,7 @@ let gui_params = {
 gui.add(gui_params, 'showNormalPlane');
 gui.add(gui_params, 'showCausticPlane');
 gui.add(gui_params, 'showDepthPlane');
+gui.add(gui_params, 'showWater');
 gui.add(gui_params, 'showChromatic');
 gui.add(gui_params, 'intensity', 0, 3);
 gui.add(gui_params, 'chromaticAberration', 0, 3);
@@ -33,6 +35,7 @@ gui.add(gui_params, 'chromaticAberration', 0, 3);
 const meshesToRender = new Map();
 const meshMaterials = new Map();
 const meshesToNotRender = new Map();
+const sceneMesh = new Map();
 
 // set up webgl/three scene
 const canvas = document.querySelector('canvas.webgl');
@@ -104,8 +107,11 @@ wall1.visible = false;
 wall2.visible = false;
 wall3.visible = false;
 wall4.visible = false;
-// floor.visible = false;
 floor.material = depthMaterial;
+sceneMesh.set("floor", floor);
+scene.add(torusknot);
+meshesToRender.set("torus", torusknot);
+meshMaterials.set("torus", torusmaterial);
 
 const waterBall = createWaterBallController({
     renderer,
@@ -129,6 +135,7 @@ const tick = () => {
     controls.update();
     normalPlane.visible = false;
     causticPlane.visible = false;
+    depthPlane.visible = false;
 
     // render
     // update camera position with light
@@ -144,6 +151,7 @@ const tick = () => {
         }
         if (name === "water") {
             mesh.material = waterNormalDebugMaterial;
+            mesh.visible = gui_params.showWater;
         } else {
             mesh.material = normalMaterial;
             mesh.material.side = THREE.BackSide;
@@ -152,38 +160,41 @@ const tick = () => {
     for (const [name, mesh] of meshesToNotRender) {
         mesh.visible = false;
     }
+    for (const [name, mesh] of sceneMesh) {
+        mesh.visible = false;
+    }
     
     // change fbo
     renderer.setRenderTarget(normalRenderTarget);
     renderer.setClearColor(0x000000, 1);
     renderer.clear();
-
     // render normals scene
     renderer.render(scene, normalCamera);
     waterNormalDebugMaterial.uniforms.heightmap.value = waterSim.getHeightmapTexture();
-    normalPlane.material = waterNormalDebugMaterial;
-    normalPlane.visible = gui_params.showNormalPlane;
-    causticPlane.visible = gui_params.showCausticPlane;
-    depthPlane.visible = gui_params.showDepthPlane;
     
     // set back to original material
     for (const [name, mesh] of meshesToRender) {
         mesh.material = meshMaterials.get(name);
     }
+
     // render receiver depth from light view
     for (const [name, mesh] of meshesToRender) {
         mesh.visible = false;
     }
-    depthPlane.visible = false;
-
+    for (const [name, mesh] of sceneMesh) {
+        mesh.visible = true;
+        mesh.material = depthMaterial;
+    }
     renderer.setRenderTarget(depthRenderTarget);
     renderer.setClearColor(0xffffff, 1);
     renderer.clear();
     renderer.render(scene, normalCamera);
-    depthPlane.visible = gui_params.showDepthPlane;
     // restore
     for (const [name, mesh] of meshesToRender) { 
         mesh.visible = true;
+        if (name === "water") {
+            mesh.visible = gui_params.showWater;
+        }
     };
     for (const [name, mesh] of meshesToNotRender) {
         mesh.visible = true;
@@ -220,6 +231,10 @@ const tick = () => {
     );
     receiveCausticMaterial.uniforms.uCausticStrength.value = gui_params.intensity * 10;
     floor.material = receiveCausticMaterial;
+
+    normalPlane.visible = gui_params.showNormalPlane;
+    causticPlane.visible = gui_params.showCausticPlane;
+    depthPlane.visible = gui_params.showDepthPlane;
 
     renderer.setRenderTarget(null);
     renderer.setClearColor(0x7ea1bf, 1);
