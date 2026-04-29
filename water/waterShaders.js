@@ -6,31 +6,26 @@ export const simFragShader = `
     uniform float rippleStrength;
 
     void main() {
-    vec2 uv = gl_FragCoord.xy / resolution.xy;
-    vec2 texel = 1.0 / resolution.xy;
+        vec2 uv = gl_FragCoord.xy / resolution.xy;
+        vec2 texel = 1.0 / resolution.xy;
 
-    vec4 current = texture2D(heightmap, uv);
-    float height = current.r;
-    float velocity = current.g;
+        vec4 current = texture2D(heightmap, uv);
+        float height = current.r;
+        float velocity = current.g;
 
-    float hL = texture2D(heightmap, uv - vec2(texel.x, 0.0)).r;
-    float hR = texture2D(heightmap, uv + vec2(texel.x, 0.0)).r;
-    float hD = texture2D(heightmap, uv - vec2(0.0, texel.y)).r;
-    float hU = texture2D(heightmap, uv + vec2(0.0, texel.y)).r;
+        float hL = texture2D(heightmap, uv - vec2(texel.x, 0.0)).r;
+        float hR = texture2D(heightmap, uv + vec2(texel.x, 0.0)).r;
+        float hD = texture2D(heightmap, uv - vec2(0.0, texel.y)).r;
+        float hU = texture2D(heightmap, uv + vec2(0.0, texel.y)).r;
 
-    float average = (hL + hR + hD + hU) * 0.25;
+        float average = (hL + hR + hD + hU) * 0.25;
+        velocity += (average - height) * waveStrength;
+        velocity *= viscosity;
+        height += velocity;
+        float d = distance(uv, mouse);
+        height += exp(-d * d / mouseSize) * rippleStrength;
 
-    velocity += (average - height) * waveStrength;
-    velocity *= viscosity;
-    height += velocity;
-
-    float d = distance(uv, mouse);
-    height += exp(-d * d / mouseSize) * rippleStrength;
-
-    height = clamp(height, -0.3, 0.3);
-    velocity = clamp(velocity, -0.3, 0.3);
-
-    gl_FragColor = vec4(height, velocity, 0.0, 1.0);
+        gl_FragColor = vec4(height, velocity, 0.0, 1.0);
     }
 `;
 
