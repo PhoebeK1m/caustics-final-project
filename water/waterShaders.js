@@ -89,4 +89,36 @@ export const waterFragShader = `
 
     gl_FragColor = vec4(color, 0.38);
     }
-    `;
+`;
+
+export const waterNormalDebugVertexShader = `
+    varying vec2 vUv;
+
+    void main() {
+    vUv = uv;
+    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+    }
+`;
+export const waterNormalDebugFragmentShader = `
+    precision highp float;
+
+    varying vec2 vUv;
+    uniform sampler2D heightmap;
+    uniform vec2 texel;
+    uniform float strength;
+
+    void main() {
+        float hL = texture2D(heightmap, vUv - vec2(texel.x, 0.0)).r;
+        float hR = texture2D(heightmap, vUv + vec2(texel.x, 0.0)).r;
+        float hD = texture2D(heightmap, vUv - vec2(0.0, texel.y)).r;
+        float hU = texture2D(heightmap, vUv + vec2(0.0, texel.y)).r;
+
+        vec3 n = normalize(vec3(
+            (hL - hR) * strength,   // X slope
+            (hD - hU) * strength,   // Y slope
+            1.0                     // Z is up
+        ));
+
+        gl_FragColor = vec4(n * 0.5 + 0.5, 1.0);
+    }`
+;

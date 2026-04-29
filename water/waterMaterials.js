@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { waterVertexShader, waterFragShader } from './waterShaders.js';
+import { waterVertexShader, waterFragShader, waterNormalDebugVertexShader, waterNormalDebugFragmentShader } from './waterShaders.js';
 
 export function createEnvTexture(scene) {
     const loader = new THREE.CubeTextureLoader();
@@ -17,7 +17,7 @@ export function createEnvTexture(scene) {
             console.log('Cube texture loaded:', texture);
             console.log('images:', texture.image); // should be array of 6
             console.log('image count:', texture.image.length);
-            scene.background = new THREE.Color(0x7ea1bf);
+            scene.background = new THREE.Color(0x4387f5);
             scene.environment = texture;
         },
         undefined,
@@ -64,3 +64,13 @@ export function createBallMaterial(envTexture) {
         envMapIntensity: 0.5
     });
 }
+
+export const waterNormalDebugMaterial = new THREE.ShaderMaterial({
+    uniforms: {
+        heightmap: { value: null },
+        texel: { value: new THREE.Vector2(1 / 256, 1 / 256) },
+        strength: { value: 10.0 },
+    },
+    vertexShader: waterNormalDebugVertexShader,
+    fragmentShader: waterNormalDebugFragmentShader
+});

@@ -18,6 +18,10 @@ const normalPlaneMaterial = new THREE.MeshBasicMaterial({
     map: normalRenderTarget.texture 
 });
 export const normalPlane = new THREE.Mesh(normalPlaneGeometry, normalPlaneMaterial);
-normalPlane.position.set(0,-3,0);
-normalPlane.rotation.set(-Math.PI/2, 0,0);
-normalPlane.scale.set(2,2);
+normalPlane.position.set(-1.9, -0.82, -2);
+normalPlane.scale.set(0.35, 0.35, 1.0);
+normalPlane.renderOrder = 999;
+normalRenderTarget.texture.minFilter = THREE.LinearFilter;
+normalRenderTarget.texture.magFilter = THREE.LinearFilter;
+normalRenderTarget.texture.wrapS = THREE.ClampToEdgeWrapping;
+normalRenderTarget.texture.wrapT = THREE.ClampToEdgeWrapping;

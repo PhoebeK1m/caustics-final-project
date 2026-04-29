@@ -19,15 +19,15 @@ export function createWaterSimulation({ renderer, size }) {
     gpu.setVariableDependencies(waterVariable, [waterVariable]);
 
     waterVariable.material.uniforms.mouse = { value: new THREE.Vector2(999, 999) };
-    waterVariable.material.uniforms.mouseSize = { value: 0.0038 };
+    waterVariable.material.uniforms.mouseSize = { value: 0.0012 };
     waterVariable.material.uniforms.viscosity = { value: 0.999 };
-    waterVariable.material.uniforms.waveStrength = { value: 1.8 };
-    waterVariable.material.uniforms.rippleStrength = { value: 0.015 };
+    waterVariable.material.uniforms.waveStrength = { value: 0.9 };
+    waterVariable.material.uniforms.rippleStrength = { value: 0.004 };
 
     const gpuError = gpu.init();
     if (gpuError) console.error(gpuError);
 
-    function disturbUv(uv, strength = 0.015, rippleSize = 0.0018) {
+    function disturbUv(uv, strength = 0.004, rippleSize = 0.0012) {
         waterVariable.material.uniforms.mouse.value.set(uv.x, uv.y);
         waterVariable.material.uniforms.rippleStrength.value = strength;
         waterVariable.material.uniforms.mouseSize.value = rippleSize;
@@ -35,8 +35,8 @@ export function createWaterSimulation({ renderer, size }) {
 
     function clearDisturbance() {
         waterVariable.material.uniforms.mouse.value.set(999, 999);
-        waterVariable.material.uniforms.rippleStrength.value = 0.015;
-        waterVariable.material.uniforms.mouseSize.value = 0.0018;
+        waterVariable.material.uniforms.rippleStrength.value = 0.004;
+        waterVariable.material.uniforms.mouseSize.value = 0.0012;
     }
 
     function compute() {
@@ -64,7 +64,7 @@ export function createWaterSimulation({ renderer, size }) {
         pixels
         );
 
-        return pixels[0] * waterMaterial.uniforms.heightScale.value;
+        return pixels[0] * waterMaterial.uniforms.heightScale.value * 0.35;
     }
 
     return {

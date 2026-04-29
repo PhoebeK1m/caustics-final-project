@@ -5,7 +5,7 @@ import { torusknot, torusmaterial, loadJuice, juicematerial } from "./objects.js
 import { normalCamera, normalRenderTarget, normalMaterial, normalPlane } from './rendertarget/normalRenderTargets.js';
 import { causticRenderTarget, causticMap, causticQuad, causticPlane, receiveCausticMaterial } from './rendertarget/causticRenderTargets.js';
 import { depthRenderTarget, depthMaterial, depthPlane } from './rendertarget/depthRenderTargets.js';
-import { createEnvTexture } from './water/waterMaterials.js';
+import { createEnvTexture, waterNormalDebugMaterial } from './water/waterMaterials.js';
 import { createWaterSimulation } from './water/waterMovement.js';
 import { createWaterObjects } from './water/waterObject.js';
 import { createWaterBallController } from './water/waterSimulation.js';
@@ -14,9 +14,9 @@ import { createWaterBallController } from './water/waterSimulation.js';
 const gui = new GUI();
 
 let gui_params = {
-	showNormalPlane: false,
-    showCausticPlane: false,
-    showDepthPlane: false,
+	showNormalPlane: true,
+    showCausticPlane: true,
+    showDepthPlane: true,
     showChromatic: true,
     intensity: 0.5,
     chromaticAberration: 0.03,
@@ -52,17 +52,18 @@ renderer.setSize(sizes.width, sizes.height);
 const controls = new OrbitControls(camera, canvas);
 controls.minDistance = 10; 
 controls.maxDistance = 20;
-controls.enableZoom = false; 
+// controls.enableZoom = false; 
 controls.enableDamping = true;
 
 const envTexture = createEnvTexture(scene);
 
 // normal plane
-scene.add(normalPlane);
+camera.add(normalPlane);
 // caustics plane
-scene.add(causticPlane);
+camera.add(causticPlane);
 //depth plane 
-scene.add(depthPlane);
+camera.add(depthPlane);
+scene.add(camera);
 
 // scene lights
 scene.add(new THREE.HemisphereLight(0xffffff, 0x224466, 1.2));
@@ -103,7 +104,8 @@ wall1.visible = false;
 wall2.visible = false;
 wall3.visible = false;
 wall4.visible = false;
-floor.visible = false;
+// floor.visible = false;
+floor.material = depthMaterial;
 
 const waterBall = createWaterBallController({
     renderer,
@@ -131,7 +133,7 @@ const tick = () => {
     // render
     // update camera position with light
     normalCamera.position.copy(spotLight.position);
-    normalCamera.lookAt(torusknot.position);
+    normalCamera.lookAt(floor.position);
 
     // use normals for material
     // for (let i = 0; i < meshesToRender.length; i++) {
@@ -140,8 +142,12 @@ const tick = () => {
             console.warn(`Missing mesh for ${name}`);
             continue;
         }
-        mesh.material = normalMaterial;
-        mesh.material.side = THREE.BackSide;
+        if (name === "water") {
+            mesh.material = waterNormalDebugMaterial;
+        } else {
+            mesh.material = normalMaterial;
+            mesh.material.side = THREE.BackSide;
+        }
     }
     for (const [name, mesh] of meshesToNotRender) {
         mesh.visible = false;
@@ -154,6 +160,8 @@ const tick = () => {
 
     // render normals scene
     renderer.render(scene, normalCamera);
+    waterNormalDebugMaterial.uniforms.heightmap.value = waterSim.getHeightmapTexture();
+    normalPlane.material = waterNormalDebugMaterial;
     normalPlane.visible = gui_params.showNormalPlane;
     causticPlane.visible = gui_params.showCausticPlane;
     depthPlane.visible = gui_params.showDepthPlane;
@@ -161,9 +169,6 @@ const tick = () => {
     // set back to original material
     for (const [name, mesh] of meshesToRender) {
         mesh.material = meshMaterials.get(name);
-    }
-    for (const [name, mesh] of meshesToNotRender) {
-        mesh.visible = true;
     }
     // render receiver depth from light view
     for (const [name, mesh] of meshesToRender) {
@@ -180,8 +185,9 @@ const tick = () => {
     for (const [name, mesh] of meshesToRender) { 
         mesh.visible = true;
     };
-
-    const heightmap = waterSim.getHeightmapTexture();
+    for (const [name, mesh] of meshesToNotRender) {
+        mesh.visible = true;
+    }
 
     // render caustics
     causticQuad.material = causticMap;
@@ -213,11 +219,10 @@ const tick = () => {
     )
     );
     receiveCausticMaterial.uniforms.uCausticStrength.value = gui_params.intensity * 10;
+    floor.material = receiveCausticMaterial;
 
     renderer.setRenderTarget(null);
-    // renderer.setClearColor(0x4287f5, 1);
     renderer.setClearColor(0x7ea1bf, 1);
-
     renderer.render(scene, camera);
 
     // call tick again on the next frame

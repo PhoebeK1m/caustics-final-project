@@ -23,7 +23,7 @@ export function createWaterObjects({ scene, envTexture, size, waterSize }) {
         createFloorMaterial()
     );
     floor.rotation.x = -Math.PI / 2;
-    floor.position.y = -1.65;
+    floor.position.y = -2.65;
     scene.add(floor);
 
     const wallMaterial = createWallMaterial();

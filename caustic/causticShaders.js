@@ -41,7 +41,7 @@ export const causticMapFragmentShader = `
     vec3 findRayLanding(vec3 startPos, vec3 rayDir) {
         vec3 lastPos = startPos;
 
-        for (int i = 1; i <= 64; i++) {
+        for (int i = 1; i <= 32; i++) {
             float t = float(i) / 32.0 * uRayMaxDistance;
             vec3 p = startPos + rayDir * t;
 
@@ -69,8 +69,10 @@ export const causticMapFragmentShader = `
     void main() {
         vec2 uv = vUV;
         vec3 normalTexture = texture2D(uTexture, uv).rgb;
-        vec3 normal = normalize(normalTexture);
-        vec3 lightDir = normalize(uLight);
+        // vec3 normal = normalize(normalTexture);
+        vec3 normal = normalize(texture2D(uTexture, uv).rgb * 2.0 - 1.0);
+        // vec3 lightDir = normalize(uLight);
+        vec3 lightDir = normalize(vPos - uLight);
         vec3 ray = refract(lightDir, normal, 1.0/1.33); // uses snell's law  :D air to water use 1.5 for glass
 
         // vec3 newPos = vPos.xyz + ray;
