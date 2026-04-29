@@ -1,5 +1,5 @@
 export const causticVertexShader = `
-    precision mediump float;
+    precision highp float;
     varying vec2 vUV;
     varying vec3 vPos;
 
@@ -12,13 +12,59 @@ export const causticVertexShader = `
 `;
 
 export const causticMapFragmentShader = `
-    precision mediump float;
+    precision highp float;
     varying vec2 vUV;
     varying vec3 vPos;
 
     uniform sampler2D uTexture;
     uniform vec3 uLight;
     uniform float uIntensity;
+
+    uniform sampler2D uDepthTexture;
+    
+    uniform mat4 uLightMatrix;
+
+    uniform float uRayMaxDistance;
+    uniform float uDepthBias;
+
+    vec3 projectToDepthUV(vec3 worldPos) {
+        vec4 clip = uLightMatrix * vec4(worldPos, 1.0);
+        vec3 ndc = clip.xyz / clip.w;
+
+        return vec3(
+            ndc.xy * 0.5 + 0.5,
+            ndc.z * 0.5 + 0.5
+        );
+    }
+
+    // optimize in logn maybe?? is working fine right now though...
+    vec3 findRayLanding(vec3 startPos, vec3 rayDir) {
+        vec3 lastPos = startPos;
+
+        for (int i = 1; i <= 64; i++) {
+            float t = float(i) / 32.0 * uRayMaxDistance;
+            vec3 p = startPos + rayDir * t;
+
+            vec3 projected = projectToDepthUV(p);
+
+            if (
+                projected.x < 0.0 || projected.x > 1.0 ||
+                projected.y < 0.0 || projected.y > 1.0
+            ) {
+                continue;
+            }
+
+            float sceneDepth = texture2D(uDepthTexture, projected.xy).r;
+
+            if (projected.z >= sceneDepth - uDepthBias) {
+                return p;
+            }
+
+            lastPos = p;
+        }
+
+        return lastPos;
+    }
 
     void main() {
         vec2 uv = vUV;
@@ -27,8 +73,9 @@ export const causticMapFragmentShader = `
         vec3 lightDir = normalize(uLight);
         vec3 ray = refract(lightDir, normal, 1.0/1.33); // uses snell's law  :D air to water use 1.5 for glass
 
-        vec3 newPos = vPos.xyz + ray;
+        // vec3 newPos = vPos.xyz + ray;
         vec3 oldPos = vPos.xyz;
+        vec3 newPos = findRayLanding(oldPos, ray);
 
         float oldArea = length(cross((dFdx(oldPos)), (dFdy(oldPos))));
         float newArea = length(cross((dFdx(newPos)), (dFdy(newPos))));
@@ -42,7 +89,7 @@ export const causticMapFragmentShader = `
 `;
 
 export const causticMaterialFragmentShader = `
-    precision mediump float;
+    precision highp float;
     uniform sampler2D uTexture;
     uniform float uAberration;
     uniform bool uChromatic;
@@ -115,5 +162,33 @@ export const causticMaterialFragmentShader = `
 
         #include <tonemapping_fragment>
         #include <colorspace_fragment>
+    }
+`;
+
+export const receiveCausticMaterialFragmentShader = `
+    uniform sampler2D uCausticTexture;
+    uniform mat4 uCausticMatrix;
+    uniform vec3 uBaseColor;
+    uniform float uCausticStrength;
+
+    varying vec3 vPos;
+
+    void main() {
+        vec4 projected = uCausticMatrix * vec4(vPos, 1.0);
+        vec3 ndc = projected.xyz / projected.w;
+        vec2 causticUV = ndc.xy * 0.5 + 0.5;
+
+        vec3 caustic = vec3(0.0);
+
+        if (
+            causticUV.x >= 0.0 && causticUV.x <= 1.0 &&
+            causticUV.y >= 0.0 && causticUV.y <= 1.0
+        ) {
+            caustic = texture2D(uCausticTexture, causticUV).rgb;
+        }
+
+        vec3 color = uBaseColor + caustic * uCausticStrength;
+        // gl_FragColor = vec4(color, 1.0);
+        gl_FragColor = vec4(texture2D(uCausticTexture, causticUV).rgb * 10.0, 1.0);
     }
 `;

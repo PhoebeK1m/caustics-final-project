@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { getCausticMap, getCausticMaterial } from "../materials.js";
+import { getCausticMap, getCausticMaterial, getReceiveCausticMaterial } from "../materials.js";
 import { FullScreenQuad } from 'three/addons/postprocessing/Pass.js';
 
 // create new render target for caustic map
@@ -15,5 +15,4 @@ export const causticQuad = new FullScreenQuad();
 export const causticMaterial = getCausticMaterial();
 const causticPlaneGeometry = new THREE.PlaneGeometry(2, 2);
 export const causticPlane = new THREE.Mesh(causticPlaneGeometry, causticMaterial);
-causticPlane.position.set(0,-2,0);
-causticPlane.rotation.set(-Math.PI/2, 0,0);
+export const receiveCausticMaterial = getReceiveCausticMaterial();

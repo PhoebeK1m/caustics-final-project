@@ -3,7 +3,7 @@ import GUI from 'lil-gui';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { torusknot, torusmaterial, loadJuice, juicematerial } from "./objects.js";
 import { normalCamera, normalRenderTarget, normalMaterial, normalPlane } from './rendertarget/normalRenderTargets.js';
-import { causticRenderTarget, causticMap, causticQuad, causticPlane, causticMaterial } from './rendertarget/causticRenderTargets.js';
+import { causticRenderTarget, causticMap, causticQuad, causticPlane, receiveCausticMaterial } from './rendertarget/causticRenderTargets.js';
 import { depthRenderTarget, depthMaterial, depthPlane } from './rendertarget/depthRenderTargets.js';
 
 // gui code and global parameters
@@ -11,18 +11,20 @@ const gui = new GUI();
 
 let gui_params = {
 	showNormalPlane: false,
-    showCausticPlane: true,
+    showCausticPlane: false,
     showDepthPlane: false,
     showJuice: false,
+    showKnot: true,
     showChromatic: true,
     intensity: 0.5,
-    chromaticAberration: 0.2
+    chromaticAberration: 0.03,
 };
 
 gui.add(gui_params, 'showNormalPlane');
 gui.add(gui_params, 'showCausticPlane');
 gui.add(gui_params, 'showDepthPlane');
 gui.add(gui_params, 'showJuice');
+gui.add(gui_params, 'showKnot');
 gui.add(gui_params, 'showChromatic');
 gui.add(gui_params, 'intensity', 0, 3);
 gui.add(gui_params, 'chromaticAberration', 0, 3);
@@ -58,15 +60,16 @@ controls.enableDamping = true;
 scene.add(torusknot);
 meshesToRender.set("torus", torusknot);
 meshMaterials.set("torus", torusmaterial);
-const loaded = await loadJuice(juicematerial);
-const {juice, juicemesh} = loaded;
+const loadingJuice = await loadJuice(juicematerial);
+const {juice, juicemesh} = loadingJuice;
 scene.add(juice);
 meshesToRender.set("juice", juicemesh);
 meshMaterials.set("juice", juicematerial);
 
 // scene plane
 const scenePlaneGeometry = new THREE.PlaneGeometry(2, 2);
-export const scenePlane = new THREE.Mesh(scenePlaneGeometry, depthMaterial);
+const scenePlaneMaterial = new THREE.MeshBasicMaterial({ color: "#000000" });
+const scenePlane = new THREE.Mesh(scenePlaneGeometry, scenePlaneMaterial);
 scenePlane.position.set(0,-5,0);
 scenePlane.rotation.set(-Math.PI/2, 0,0);
 scenePlane.scale.set(4,4);
@@ -96,11 +99,6 @@ const tick = () => {
     causticPlane.visible = false;
     scenePlane.visible = false;
 
-    // find caustic center
-    const lightDir = spotLight.position.clone().normalize();
-    const targetObject = torusknot;
-    const { center, radius } = computeCausticsBounds(targetObject, lightDir);
-    
     // render
     // update camera position with light
     normalCamera.position.copy(spotLight.position);
@@ -115,9 +113,12 @@ const tick = () => {
         }
         mesh.material = normalMaterial;
         mesh.material.side = THREE.BackSide;
-        // meshesToRender.get("juice").visible = gui_params.showJuice;
+        
         if (name == "juice") {
             mesh.visible = gui_params.showJuice;
+        }
+        if (name == "torus") {
+            mesh.visible = gui_params.showKnot;
         }
     }
     
@@ -147,6 +148,7 @@ const tick = () => {
     }
     depthPlane.visible = false;
     scenePlane.visible = true;
+    scenePlane.material = depthMaterial;
 
     renderer.setRenderTarget(depthRenderTarget);
     renderer.setClearColor(0xffffff, 1);
@@ -159,13 +161,21 @@ const tick = () => {
         if (name == "juice") {
             mesh.visible = gui_params.showJuice;
         }
+        if (name == "torus") {
+            mesh.visible = gui_params.showKnot;
+        }
     };
 
     // render caustics
     causticQuad.material = causticMap;
     causticQuad.material.uniforms.uTexture.value = normalRenderTarget.texture;
+    causticQuad.material.uniforms.uDepthTexture.value = depthRenderTarget.texture;
+
     causticQuad.material.uniforms.uLight.value = spotLight.position;
     causticQuad.material.uniforms.uIntensity.value = gui_params.intensity;
+
+    causticQuad.material.uniforms.uLightMatrix.value
+        .multiplyMatrices(normalCamera.projectionMatrix, normalCamera.matrixWorldInverse);
 
     // put fbo onto plane
     renderer.setRenderTarget(causticRenderTarget);
@@ -173,17 +183,23 @@ const tick = () => {
     renderer.clear();
     // by using the quads (actually 2 triangles) to find caustics (using area)
     causticQuad.render(renderer);
-
-    const scaleCorrection = 1.35;
-    causticPlane.position.set(
-        center.x,
-        -4,
-        center.z
-    );
-    causticPlane.scale.setScalar(radius * scaleCorrection);
     causticPlane.material.uniforms.uTexture.value = causticRenderTarget.texture;
     causticPlane.material.uniforms.uAberration.value = gui_params.chromaticAberration;
     causticPlane.material.uniforms.uChromatic.value = gui_params.showChromatic;
+
+    // after setting receiveCausticMaterial uniforms
+    receiveCausticMaterial.uniforms.uCausticTexture.value = causticRenderTarget.texture;
+    receiveCausticMaterial.uniforms.uCausticMatrix.value.copy(
+    new THREE.Matrix4().multiplyMatrices(
+        normalCamera.projectionMatrix,
+        normalCamera.matrixWorldInverse
+    )
+    );
+    receiveCausticMaterial.uniforms.uCausticStrength.value = gui_params.intensity * 10;
+
+    scenePlane.visible = true;
+    scenePlane.material = receiveCausticMaterial;
+
 
     renderer.setRenderTarget(null);
     // renderer.setClearColor(0x4287f5, 1);
@@ -196,40 +212,3 @@ const tick = () => {
 };
 
 tick();
-
-// project of caustic to ground will get rid of with raymarching
-function computeCausticsBounds(object, lightDir) {
-    bounds.setFromObject(object, true);
-
-    const corners = [
-        new THREE.Vector3(bounds.min.x, bounds.min.y, bounds.min.z),
-        new THREE.Vector3(bounds.min.x, bounds.min.y, bounds.max.z),
-        new THREE.Vector3(bounds.min.x, bounds.max.y, bounds.min.z),
-        new THREE.Vector3(bounds.min.x, bounds.max.y, bounds.max.z),
-        new THREE.Vector3(bounds.max.x, bounds.min.y, bounds.min.z),
-        new THREE.Vector3(bounds.max.x, bounds.min.y, bounds.max.z),
-        new THREE.Vector3(bounds.max.x, bounds.max.y, bounds.min.z),
-        new THREE.Vector3(bounds.max.x, bounds.max.y, bounds.max.z),
-    ];
-
-    const projected = corners.map((v) => {
-        const t = (Math.abs(lightDir.y) < 0.0001) ? 0 : -v.y / lightDir.y;
-        return new THREE.Vector3(
-        v.x + lightDir.x * t,
-        v.y + lightDir.y * t,
-        v.z + lightDir.z * t
-        );
-    });
-
-    const center = projected
-        .reduce((a, b) => a.add(b), new THREE.Vector3())
-        .divideScalar(projected.length);
-
-    const radius = projected.reduce((max, p) => {
-        const dx = p.x - center.x;
-        const dz = p.z - center.z;
-        return Math.max(max, Math.sqrt(dx * dx + dz * dz));
-    }, 0);
-
-    return { center, radius };
-}
