@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { causticVertexShader, causticMapFragmentShader, causticMaterialFragmentShader, receiveCausticMaterialFragmentShader } from "../causticShaders.js";
+import { causticVertexShader, causticMapFragmentShader, causticMaterialFragmentShader, receiveCausticMaterialFragmentShader } from "./causticShaders.js";
 
 export const getCausticMap = () => {
     return new THREE.ShaderMaterial({

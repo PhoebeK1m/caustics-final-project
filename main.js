@@ -5,6 +5,10 @@ import { torusknot, torusmaterial, loadJuice, juicematerial } from "./objects.js
 import { normalCamera, normalRenderTarget, normalMaterial, normalPlane } from './rendertarget/normalRenderTargets.js';
 import { causticRenderTarget, causticMap, causticQuad, causticPlane, receiveCausticMaterial } from './rendertarget/causticRenderTargets.js';
 import { depthRenderTarget, depthMaterial, depthPlane } from './rendertarget/depthRenderTargets.js';
+import { createEnvTexture } from './water/waterMaterials.js';
+import { createWaterSimulation } from './water/waterMovement.js';
+import { createWaterObjects } from './water/waterObject.js';
+import { createWaterBallController } from './water/waterSimulation.js';
 
 // gui code and global parameters
 const gui = new GUI();
@@ -13,8 +17,6 @@ let gui_params = {
 	showNormalPlane: false,
     showCausticPlane: false,
     showDepthPlane: false,
-    showJuice: false,
-    showKnot: true,
     showChromatic: true,
     intensity: 0.5,
     chromaticAberration: 0.03,
@@ -23,8 +25,6 @@ let gui_params = {
 gui.add(gui_params, 'showNormalPlane');
 gui.add(gui_params, 'showCausticPlane');
 gui.add(gui_params, 'showDepthPlane');
-gui.add(gui_params, 'showJuice');
-gui.add(gui_params, 'showKnot');
 gui.add(gui_params, 'showChromatic');
 gui.add(gui_params, 'intensity', 0, 3);
 gui.add(gui_params, 'chromaticAberration', 0, 3);
@@ -32,6 +32,7 @@ gui.add(gui_params, 'chromaticAberration', 0, 3);
 // scene objects and materials
 const meshesToRender = new Map();
 const meshMaterials = new Map();
+const meshesToNotRender = new Map();
 
 // set up webgl/three scene
 const canvas = document.querySelector('canvas.webgl');
@@ -43,37 +44,18 @@ const sizes = {
 const camera = new THREE.PerspectiveCamera(65, sizes.width / sizes.height, 0.1, 1000);
 camera.position.z = 10; // set camera infront of object
 
-// set render window half of screen
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
-renderer.setPixelRatio(window.devicePixelRatio);
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 renderer.setSize(sizes.width, sizes.height);
 
 // camera movement
 const controls = new OrbitControls(camera, canvas);
-const fixedRadius = 10;
-controls.minDistance = fixedRadius; // drag rotates and translate camera around target
-controls.maxDistance = fixedRadius;
+controls.minDistance = 10; 
+controls.maxDistance = 20;
 controls.enableZoom = false; 
 controls.enableDamping = true;
 
-// geometry
-scene.add(torusknot);
-meshesToRender.set("torus", torusknot);
-meshMaterials.set("torus", torusmaterial);
-const loadingJuice = await loadJuice(juicematerial);
-const {juice, juicemesh} = loadingJuice;
-scene.add(juice);
-meshesToRender.set("juice", juicemesh);
-meshMaterials.set("juice", juicematerial);
-
-// scene plane
-const scenePlaneGeometry = new THREE.PlaneGeometry(2, 2);
-const scenePlaneMaterial = new THREE.MeshBasicMaterial({ color: "#000000" });
-const scenePlane = new THREE.Mesh(scenePlaneGeometry, scenePlaneMaterial);
-scenePlane.position.set(0,-5,0);
-scenePlane.rotation.set(-Math.PI/2, 0,0);
-scenePlane.scale.set(4,4);
-scene.add(scenePlane);
+const envTexture = createEnvTexture(scene);
 
 // normal plane
 scene.add(normalPlane);
@@ -82,22 +64,69 @@ scene.add(causticPlane);
 //depth plane 
 scene.add(depthPlane);
 
-// light
+// scene lights
+scene.add(new THREE.HemisphereLight(0xffffff, 0x224466, 1.2));
+
+const sun = new THREE.DirectionalLight(0xffffff, 1.5);
+sun.position.set(3, 6, 4);
+scene.add(sun);
+
+// spot light
 const spotLight = new THREE.SpotLight(0xffffff, 100); 
 spotLight.position.set(0, 5, 0);
 spotLight.penumbra = 0.5;
 spotLight.decay = 2;
 scene.add(spotLight);
 
-const bounds = new THREE.Box3();
+const waterSim = createWaterSimulation({ renderer, size: 256 });
+const {
+    water,
+    waterMaterial,
+    floor,
+    wall1,
+    wall2,
+    wall3,
+    wall4,
+    wallMaterial,
+    ball,
+    ballRadius
+} = createWaterObjects({
+    scene,
+    envTexture,
+    size: 256,
+    waterSize: 10
+});
+meshesToRender.set("water", water);
+meshMaterials.set("water", waterMaterial);
+meshesToNotRender.set("ball", ball);
+wall1.visible = false;
+wall2.visible = false;
+wall3.visible = false;
+wall4.visible = false;
+floor.visible = false;
+
+const waterBall = createWaterBallController({
+    renderer,
+    camera,
+    controls,
+    water,
+    ball,
+    ballRadius,
+    waterSim,
+    waterMaterial,
+    waterSize: 10
+});
 
 //animation loop
 const tick = () => {
+    waterSim.compute();
+    water.material.uniforms.heightmap.value = waterSim.getHeightmapTexture();
+    waterBall.update();
+
     // update controls for damping camera movement
     controls.update();
     normalPlane.visible = false;
     causticPlane.visible = false;
-    scenePlane.visible = false;
 
     // render
     // update camera position with light
@@ -113,13 +142,9 @@ const tick = () => {
         }
         mesh.material = normalMaterial;
         mesh.material.side = THREE.BackSide;
-        
-        if (name == "juice") {
-            mesh.visible = gui_params.showJuice;
-        }
-        if (name == "torus") {
-            mesh.visible = gui_params.showKnot;
-        }
+    }
+    for (const [name, mesh] of meshesToNotRender) {
+        mesh.visible = false;
     }
     
     // change fbo
@@ -137,18 +162,14 @@ const tick = () => {
     for (const [name, mesh] of meshesToRender) {
         mesh.material = meshMaterials.get(name);
     }
-    
-    // rotate geometry
-    torusknot.rotation.x += 0.005;
-    torusknot.rotation.y += 0.01;
-
+    for (const [name, mesh] of meshesToNotRender) {
+        mesh.visible = true;
+    }
     // render receiver depth from light view
     for (const [name, mesh] of meshesToRender) {
         mesh.visible = false;
     }
     depthPlane.visible = false;
-    scenePlane.visible = true;
-    scenePlane.material = depthMaterial;
 
     renderer.setRenderTarget(depthRenderTarget);
     renderer.setClearColor(0xffffff, 1);
@@ -158,13 +179,9 @@ const tick = () => {
     // restore
     for (const [name, mesh] of meshesToRender) { 
         mesh.visible = true;
-        if (name == "juice") {
-            mesh.visible = gui_params.showJuice;
-        }
-        if (name == "torus") {
-            mesh.visible = gui_params.showKnot;
-        }
     };
+
+    const heightmap = waterSim.getHeightmapTexture();
 
     // render caustics
     causticQuad.material = causticMap;
@@ -196,10 +213,6 @@ const tick = () => {
     )
     );
     receiveCausticMaterial.uniforms.uCausticStrength.value = gui_params.intensity * 10;
-
-    scenePlane.visible = true;
-    scenePlane.material = receiveCausticMaterial;
-
 
     renderer.setRenderTarget(null);
     // renderer.setClearColor(0x4287f5, 1);
