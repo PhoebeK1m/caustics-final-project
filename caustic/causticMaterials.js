@@ -64,12 +64,13 @@ export const causticMeshMaterial = new THREE.ShaderMaterial({
     uniforms: {
         uWaterTexture: { value: null },
         uLightDir: { value: new THREE.Vector3() },
-        uWaterSize: { value: 10 },
+        uWaterSize: { value: 5 },
         uFloorY: { value: 0 },
         uIntensity: { value: 1 },
     },
     depthWrite: false,
     depthTest: false,
-    transparent: false,
+    transparent: true,
+    blending: THREE.AdditiveBlending,
     side: THREE.DoubleSide,
 });

@@ -54,7 +54,7 @@ renderer.setSize(sizes.width, sizes.height);
 
 // camera movement
 const controls = new OrbitControls(camera, canvas);
-controls.minDistance = 10; 
+controls.minDistance = 6; 
 controls.maxDistance = 20;
 // controls.enableZoom = false; 
 controls.enableDamping = true;
@@ -99,7 +99,7 @@ const {
     scene,
     envTexture,
     size: 256,
-    waterSize: 10
+    waterSize: 5
 });
 meshesToRender.set("water", water);
 meshMaterials.set("water", waterMaterial);
@@ -123,7 +123,7 @@ const waterBall = createWaterBallController({
     ballRadius,
     waterSim,
     waterMaterial,
-    waterSize: 10
+    waterSize: 5
 });
 
 //animation loop
@@ -212,7 +212,7 @@ const tick = () => {
     const lightDir = spotLight.position.clone().sub(water.position).normalize();
     causticMeshMaterial.uniforms.uLightDir.value.copy(lightDir);
 
-    causticMeshMaterial.uniforms.uWaterSize.value = 10;
+    causticMeshMaterial.uniforms.uWaterSize.value = 5;
     causticMeshMaterial.uniforms.uFloorY.value = floor.position.y;
     causticMeshMaterial.uniforms.uIntensity.value = gui_params.intensity;
 

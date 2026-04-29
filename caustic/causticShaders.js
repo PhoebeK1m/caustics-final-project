@@ -182,7 +182,7 @@ export const receiveCausticMaterialFragmentShader = `
         vec4 projected = uCausticMatrix * vec4(vPos, 1.0);
         vec3 ndc = projected.xyz / projected.w;
         vec2 causticUV = ndc.xy * 0.5 + 0.5;
-
+        causticUV.y = 1.0 - causticUV.y;
         vec3 caustic = vec3(0.0);
 
         if (
@@ -230,12 +230,12 @@ void main() {
     vec3 worldWater = worldFlat;
     worldWater.y += info.r;
 
-    // If info.ba are slopes:
-    vec2 slope = info.ba * 0.5;
+    vec3 lightRay = -normalize(uLightDir);
+    vec2 slope = info.ba * 2.0 - 1.0;
     vec3 normal = normalize(vec3(-slope.x, 1.0, -slope.y));
 
-    vec3 baseRay = refract(-normalize(uLightDir), vec3(0.0, 1.0, 0.0), IOR_AIR / IOR_WATER);
-    vec3 bentRay = refract(-normalize(uLightDir), normal, IOR_AIR / IOR_WATER);
+    vec3 baseRay = refract(lightRay, vec3(0.0, 1.0, 0.0), 1.0 / 1.333);
+    vec3 bentRay = refract(lightRay, normal, 1.0 / 1.333);
 
     vOldPos = projectToFloor(worldFlat, baseRay);
     vNewPos = projectToFloor(worldWater, bentRay);
@@ -256,19 +256,18 @@ varying vec3 vOldPos;
 varying vec3 vNewPos;
 
 void main() {
-    // float oldArea = length(cross(dFdx(vOldPos), dFdy(vOldPos)));
-    // float newArea = length(cross(dFdx(vNewPos), dFdy(vNewPos)));
-    float oldArea = length(dFdx(vOldPos)) * length(dFdy(vOldPos));
-    float newArea = length(dFdx(vNewPos)) * length(dFdy(vNewPos));
+    float oldArea = length(cross(dFdx(vOldPos), dFdy(vOldPos)));
+    float newArea = length(cross(dFdx(vNewPos), dFdy(vNewPos)));
 
-    float ratio = oldArea / max(newArea, 1e-5);
+    float ratio = oldArea / max(newArea, 1e-7);
 
-    // caustics are only the focused extra light above baseline
-    float focus = max(ratio - 1.0, 0.0);
+    float c = ratio;
 
-    // smoother gradient
-    float c = log(1.0 + focus * 2.0);
-    c = smoothstep(0.0, 1.5, c);
+    c = max(c - 0.75, 0.0);
+
+    c = pow(c, 2.6);
+
+    c = clamp(c, 0.0, 12.0);
 
     gl_FragColor = vec4(vec3(c * uIntensity), 1.0);
 }
