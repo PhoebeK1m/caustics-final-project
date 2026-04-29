@@ -110,9 +110,6 @@ wall3.visible = false;
 wall4.visible = false;
 floor.material = depthMaterial;
 sceneMesh.set("floor", floor);
-// scene.add(torusknot);
-// meshesToRender.set("torus", torusknot);
-// meshMaterials.set("torus", torusmaterial);
 
 const waterBall = createWaterBallController({
     renderer,
@@ -144,7 +141,6 @@ const tick = () => {
     normalCamera.lookAt(floor.position);
 
     // use normals for material
-    // for (let i = 0; i < meshesToRender.length; i++) {
     for (const [name, mesh] of meshesToRender) {
         if (!mesh) {
             console.warn(`Missing mesh for ${name}`);
