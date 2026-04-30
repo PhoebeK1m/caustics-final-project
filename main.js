@@ -77,7 +77,8 @@ const {
     wall3,
     wall4,
     ball, // i had it originally as a ball but changed the mesh to a pickle : )
-    ballRadius
+    ballRadius,
+    pickleRef
 } = createWaterObjects({
     scene,
     envTexture,

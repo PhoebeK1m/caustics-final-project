@@ -44,12 +44,7 @@ export function createWaterObjects({ scene, envTexture, size, waterSize }) {
     wall3Material.uniforms.side.value = 0;
     wall4Material.uniforms.side.value = 3;
 
-    const wallGeo = new THREE.PlaneGeometry(
-        waterSize,
-        wallHeight,
-        wallSegments,
-        1
-    );
+    const wallGeo = new THREE.PlaneGeometry(waterSize, wallHeight, wallSegments, 1);
 
     const wall1 = new THREE.Mesh(wallGeo, wall1Material);
     wall1.position.set(0, 0, -halfWater);
@@ -73,9 +68,14 @@ export function createWaterObjects({ scene, envTexture, size, waterSize }) {
 
     const ballRadius = 0.35;
     const ball = new THREE.Group();
-
     ball.position.set(0, ballRadius + 0.12, 0);
     scene.add(ball);
+
+    const pickleRef = {
+        root: null,
+        meshes: [],
+        originalMaterials: new Map()
+    };
 
     const loader = new GLTFLoader();
 
@@ -83,12 +83,16 @@ export function createWaterObjects({ scene, envTexture, size, waterSize }) {
         '/models/pickle.glb',
         (gltf) => {
             const pickle = gltf.scene;
-
-            // pickle.scale.set(0.3, 0.3, 0.3);
-
-            // local offset inside the movable group
             pickle.position.set(0, 0, 0);
 
+            pickle.traverse((child) => {
+                if (child.isMesh) {
+                    pickleRef.meshes.push(child);
+                    pickleRef.originalMaterials.set(child, child.material);
+                }
+            });
+
+            pickleRef.root = pickle;
             ball.add(pickle);
         },
         undefined,
@@ -106,6 +110,7 @@ export function createWaterObjects({ scene, envTexture, size, waterSize }) {
         wall3,
         wall4,
         ball,
-        ballRadius
+        ballRadius,
+        pickleRef
     };
 }
