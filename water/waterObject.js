@@ -1,5 +1,9 @@
 import * as THREE from 'three';
-import { createBallMaterial, createFloorMaterial, createWallMaterial, createWaterMaterial } from './waterMaterials.js';
+import {
+    createFloorMaterial,
+    createWaterMaterial,
+    createDynamicWallMaterial
+} from './waterMaterials.js';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 
 export function getWaterUvFromWorld(x, z, waterSize) {
@@ -27,26 +31,52 @@ export function createWaterObjects({ scene, envTexture, size, waterSize }) {
     floor.position.y = -2.65;
     scene.add(floor);
 
-    const wallMaterial = createWallMaterial();
+    const wallHeight = 4;
+    const wallSegments = size - 1;
 
-    const wall1 = new THREE.Mesh(new THREE.PlaneGeometry(waterSize, 4), wallMaterial);
-    wall1.position.set(0, -0.65, -halfWater);
+    const wall1Material = createDynamicWallMaterial(envTexture);
+    const wall2Material = createDynamicWallMaterial(envTexture);
+    const wall3Material = createDynamicWallMaterial(envTexture);
+    const wall4Material = createDynamicWallMaterial(envTexture);
+
+    wall1Material.uniforms.side.value = 2;
+    wall2Material.uniforms.side.value = 1;
+    wall3Material.uniforms.side.value = 0;
+    wall4Material.uniforms.side.value = 3;
+
+    const wallGeo = new THREE.PlaneGeometry(
+        waterSize,
+        wallHeight,
+        wallSegments,
+        1
+    );
+
+    const wall1 = new THREE.Mesh(wallGeo, wall1Material);
+    wall1.position.set(0, 0, -halfWater);
+    wall1.rotation.y = Math.PI;
     scene.add(wall1);
 
-    const wall2 = new THREE.Mesh(new THREE.PlaneGeometry(waterSize, 4), wallMaterial);
-    wall2.rotation.y = Math.PI / 2;
-    wall2.position.set(-halfWater, -0.65, 0);
+    const wall2 = new THREE.Mesh(wallGeo.clone(), wall2Material);
+    wall2.rotation.y = -Math.PI / 2;
+    wall2.position.set(-halfWater, 0, 0);
     scene.add(wall2);
 
-    const wall3 = new THREE.Mesh(new THREE.PlaneGeometry(waterSize, 4), wallMaterial);
+    const wall3 = new THREE.Mesh(wallGeo.clone(), wall3Material);
     wall3.rotation.y = -Math.PI;
-    wall3.position.set(0, -0.65, halfWater);
+    wall3.position.set(0, 0, halfWater);
     scene.add(wall3);
 
-    const wall4 = new THREE.Mesh(new THREE.PlaneGeometry(waterSize, 4), wallMaterial);
-    wall4.rotation.y = -Math.PI / 2;
-    wall4.position.set(halfWater, -0.65, 0);
+    const wall4 = new THREE.Mesh(wallGeo.clone(), wall4Material);
+    wall4.rotation.y = Math.PI / 2;
+    wall4.position.set(halfWater, 0, 0);
     scene.add(wall4);
+
+    const wallMaterial = [
+        wall1Material,
+        wall2Material,
+        wall3Material,
+        wall4Material
+    ];
 
     const ballRadius = 0.35;
     const ball = new THREE.Group();

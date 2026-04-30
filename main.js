@@ -105,14 +105,6 @@ meshMaterials.set("water", waterMaterial);
 meshesToNotRender.set("ball", ball);
 floor.material = depthMaterial;
 sceneMesh.set("floor", floor);
-// sceneMesh.set("wall1", wall1);
-// sceneMesh.set("wall2", wall2);
-// sceneMesh.set("wall3", wall3);
-// sceneMesh.set("wall4", wall4);
-wall1.visible = false;
-wall2.visible = false;
-wall3.visible = false;
-wall4.visible = false;
 
 const floorCausticMaterial = getReceiveCausticMaterial();
 const wallCausticMaterial = getReceiveCausticMaterial();
@@ -136,6 +128,14 @@ const waterBall = createWaterBallController({
 const tick = () => {
     waterSim.compute();
     water.material.uniforms.heightmap.value = waterSim.getHeightmapTexture();
+    const heightmapTexture = waterSim.getHeightmapTexture();
+
+    for (const wall of [wall1, wall2, wall3, wall4]) {
+        wall.material.uniforms.heightmap.value = heightmapTexture;
+        wall.material.uniforms.waterSize.value = 5;
+        wall.material.uniforms.waterY.value = water.position.y;
+        wall.material.uniforms.floorY.value = floor.position.y;
+    }
     waterBall.update();
 
     // update controls for damping camera movement

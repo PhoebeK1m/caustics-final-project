@@ -1,6 +1,12 @@
 import * as THREE from 'three';
-import { waterVertexShader, waterFragShader, waterNormalDebugVertexShader, waterNormalDebugFragmentShader } from './waterShaders.js';
-
+import {
+    waterVertexShader,
+    waterFragShader,
+    waterNormalDebugVertexShader,
+    waterNormalDebugFragmentShader,
+    dynamicWallVertexShader,
+    dynamicWallFragmentShader
+} from './waterShaders.js';
 export function createEnvTexture(scene) {
     const loader = new THREE.CubeTextureLoader();
 
@@ -74,3 +80,23 @@ export const waterNormalDebugMaterial = new THREE.ShaderMaterial({
     vertexShader: waterNormalDebugVertexShader,
     fragmentShader: waterNormalDebugFragmentShader
 });
+
+export function createDynamicWallMaterial(envTexture) {
+    return new THREE.ShaderMaterial({
+        uniforms: {
+            heightmap: { value: null },
+            uEnvMap: { value: envTexture },
+            heightScale: { value: 3.0 },
+            waterSize: { value: 5.0 },
+            waterY: { value: 0.0 },
+            floorY: { value: -2.65 },
+            side: { value: 0 }, // 0=north, 1=west, 2=south, 3=east
+            lightDir: { value: new THREE.Vector3(0.4, 1.0, 0.3) }
+        },
+        vertexShader: dynamicWallVertexShader,
+        fragmentShader: dynamicWallFragmentShader,
+        side: THREE.DoubleSide,
+        transparent: true,
+        depthWrite: false
+    });
+}

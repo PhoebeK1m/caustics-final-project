@@ -145,3 +145,84 @@ export const waterNormalDebugFragmentShader = `
         gl_FragColor = vec4(n * 0.5 + 0.5, 1.0);
     }
 `;
+
+export const dynamicWallVertexShader = `
+    uniform sampler2D heightmap;
+    uniform float heightScale;
+    uniform float waterY;
+    uniform float floorY;
+    uniform int side;
+
+    varying vec2 vUv;
+    varying vec3 vWorldPos;
+    varying float vWallFade;
+
+    vec2 getEdgeUv(vec2 uv) {
+        if (side == 0) {
+            return vec2(1.0 - uv.x, 0.0);
+        } else if (side == 1) {
+            return vec2(0.0, 1.0 - uv.x); 
+        } else if (side == 2) {
+            return vec2(1.0 - uv.x, 1.0);
+        }
+
+        return vec2(1.0, uv.x);   
+    }
+
+    void main() {
+        vUv = uv;
+
+        vec2 edgeUv = getEdgeUv(uv);
+        float h = texture2D(heightmap, edgeUv).r;
+
+        float topY = waterY + h * heightScale;
+        float finalY = mix(floorY, topY, uv.y);
+
+        vec3 pos = position;
+
+        vec4 worldPos = modelMatrix * vec4(pos, 1.0);
+        worldPos.y = finalY;
+
+        vWorldPos = worldPos.xyz;
+        vWallFade = uv.y;
+
+        gl_Position = projectionMatrix * viewMatrix * worldPos;
+    }
+`;
+
+export const dynamicWallFragmentShader = `
+    precision highp float;
+
+    uniform samplerCube uEnvMap;
+    uniform vec3 lightDir;
+
+    varying vec2 vUv;
+    varying vec3 vWorldPos;
+    varying float vWallFade;
+
+    void main() {
+        vec3 viewDir = normalize(vWorldPos - cameraPosition);
+
+        vec3 wallNormal = normalize(cross(dFdx(vWorldPos), dFdy(vWorldPos)));
+        if (!gl_FrontFacing) {
+            wallNormal *= -1.0;
+        }
+
+        vec3 reflectedRay = reflect(viewDir, wallNormal);
+        vec3 reflectedColor = textureCube(uEnvMap, reflectedRay).rgb;
+
+        vec3 deepWater = vec3(0.18, 0.26, 0.08);
+        vec3 shallowWater = vec3(0.55, 0.68, 0.22);
+
+        vec3 baseColor = mix(deepWater, shallowWater, vWallFade);
+        vec3 color = mix(baseColor, reflectedColor, 0.25);
+
+        vec3 L = normalize(lightDir);
+        float spec = pow(max(dot(reflect(-L, wallNormal), -viewDir), 0.0), 120.0);
+        color += vec3(spec) * vec3(1.5, 1.3, 1.0);
+
+        float alpha = mix(0.45, 0.78, vWallFade);
+
+        gl_FragColor = vec4(color, alpha);
+    }
+`;
