@@ -3,7 +3,6 @@ import GUI from 'lil-gui';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { normalCamera, normalRenderTarget, normalMaterial, normalPlane } from './rendertarget/normalRenderTargets.js';
 import { causticRenderTarget, causticPlane, receiveCausticMaterial } from './rendertarget/causticRenderTargets.js';
-import { depthRenderTarget, depthMaterial, depthPlane } from './rendertarget/depthRenderTargets.js';
 import { createEnvTexture, waterNormalDebugMaterial } from './water/waterMaterials.js';
 import { createWaterSimulation } from './water/waterMovement.js';
 import { createWaterObjects } from './water/waterObject.js';
@@ -16,15 +15,11 @@ const gui = new GUI();
 let gui_params = {
 	showNormalPlane: true,
     showCausticPlane: true,
-    showDepthPlane: true,
-    showWater: true,
     intensity: 0.5,
 };
 
 gui.add(gui_params, 'showNormalPlane');
 gui.add(gui_params, 'showCausticPlane');
-gui.add(gui_params, 'showDepthPlane');
-gui.add(gui_params, 'showWater');
 gui.add(gui_params, 'intensity', 0, 3);
 
 // scene objects and materials
@@ -60,8 +55,6 @@ const envTexture = createEnvTexture(scene);
 camera.add(normalPlane);
 // caustics plane
 camera.add(causticPlane);
-//depth plane 
-camera.add(depthPlane);
 scene.add(camera);
 
 // scene lights
@@ -99,8 +92,11 @@ const {
 meshesToRender.set("water", water);
 meshMaterials.set("water", waterMaterial);
 meshesToNotRender.set("ball", ball);
-floor.material = depthMaterial;
 sceneMesh.set("floor", floor);
+meshesToNotRender.set("wall1", wall1);
+meshesToNotRender.set("wall2", wall2);
+meshesToNotRender.set("wall3", wall3);
+meshesToNotRender.set("wall4", wall4);
 
 const floorCausticMaterial = getReceiveCausticMaterial();
 const wallCausticMaterial = getReceiveCausticMaterial();
@@ -138,7 +134,6 @@ const tick = () => {
     controls.update();
     normalPlane.visible = false;
     causticPlane.visible = false;
-    depthPlane.visible = false;
 
     // render
     // update camera position with light
@@ -153,7 +148,6 @@ const tick = () => {
         }
         if (name === "water") {
             mesh.material = waterNormalDebugMaterial;
-            mesh.visible = gui_params.showWater;
         } else {
             mesh.material = normalMaterial;
             mesh.material.side = THREE.BackSide;
@@ -177,26 +171,9 @@ const tick = () => {
     for (const [name, mesh] of meshesToRender) {
         mesh.material = meshMaterials.get(name);
     }
-
-    // render receiver depth from light view
-    // for (const [name, mesh] of meshesToRender) {
-    //     mesh.visible = false;
-    // }
-    // for (const [name, mesh] of sceneMesh) {
-    //     mesh.visible = true;
-    //     mesh.material = depthMaterial;
-    // }
-    // renderer.setRenderTarget(depthRenderTarget);
-    // renderer.setClearColor(0xffffff, 1);
-    // renderer.clear();
-    // renderer.render(scene, normalCamera);
-    // restore
-    for (const [name, mesh] of meshesToRender) { 
+    for (const [name, mesh] of sceneMesh) {
         mesh.visible = true;
-        if (name === "water") {
-            mesh.visible = gui_params.showWater;
-        }
-    };
+    }
     for (const [name, mesh] of meshesToNotRender) {
         mesh.visible = true;
     }
@@ -262,7 +239,6 @@ const tick = () => {
 
     normalPlane.visible = gui_params.showNormalPlane;
     causticPlane.visible = gui_params.showCausticPlane;
-    depthPlane.visible = gui_params.showDepthPlane;
 
     renderer.setRenderTarget(null);
     renderer.setClearColor(0x7ea1bf, 1);

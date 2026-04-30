@@ -21,6 +21,7 @@ export const getReceiveCausticMaterial = () => {
         depthWrite: true,
         depthTest: true,
         transparent: false,
+        side: THREE.DoubleSide,
     });
 
     return material;
