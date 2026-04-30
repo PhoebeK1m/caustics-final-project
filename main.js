@@ -7,7 +7,7 @@ import { createEnvTexture, waterNormalDebugMaterial } from './water/waterMateria
 import { createWaterSimulation } from './water/waterMovement.js';
 import { createWaterObjects } from './water/waterObject.js';
 import { createWaterBallController } from './water/waterSimulation.js';
-import { causticMeshMaterial, getReceiveCausticMaterial } from './caustic/causticMaterials.js';
+import { causticMeshMaterial } from './caustic/causticMaterials.js';
 
 // gui code and global parameters
 const gui = new GUI();
