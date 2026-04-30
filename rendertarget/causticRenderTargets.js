@@ -13,6 +13,6 @@ const causticPlaneMaterial = new THREE.MeshBasicMaterial({
 const causticPlaneGeometry = new THREE.PlaneGeometry(2, 2);
 export const causticPlane = new THREE.Mesh(causticPlaneGeometry, causticPlaneMaterial);
 export const receiveCausticMaterial = getReceiveCausticMaterial();
-causticPlane.position.set(-1.9, 0, -2);
+causticPlane.position.set(-1.9, -0.3, -2);
 causticPlane.scale.set(0.35, 0.35, 1.0);
 causticPlane.renderOrder = 999;

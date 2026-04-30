@@ -13,8 +13,8 @@ import { causticMeshMaterial, getReceiveCausticMaterial } from './caustic/causti
 const gui = new GUI();
 
 let gui_params = {
-	showNormalPlane: true,
-    showCausticPlane: true,
+	showNormalPlane: false,
+    showCausticPlane: false,
     intensity: 0.5,
 };
 

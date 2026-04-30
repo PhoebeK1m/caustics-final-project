@@ -18,6 +18,6 @@ const normalPlaneMaterial = new THREE.MeshBasicMaterial({
     map: normalRenderTarget.texture 
 });
 export const normalPlane = new THREE.Mesh(normalPlaneGeometry, normalPlaneMaterial);
-normalPlane.position.set(-1.9, -0.82, -2);
+normalPlane.position.set(-1.9, 0.5, -2);
 normalPlane.scale.set(0.35, 0.35, 1.0);
 normalPlane.renderOrder = 999;

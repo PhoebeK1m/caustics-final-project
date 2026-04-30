@@ -1,6 +1,29 @@
-.webgl
-{
+@font-face {
+    font-family: 'momentz';
+    src: url('/font/Momentz.ttf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+}
+
+body {
+    margin: 0;
+    overflow: hidden;
+}
+
+.webgl {
     position: fixed;
     top: 0;
     left: 0;
+    outline: none;
+}
+
+/* Title overlay */
+.title {
+    position: fixed;
+    left: 30px;
+    color: #3f5218;
+    font-family: 'momentz', sans-serif;
+    font-size: 50px;
+    z-index: 10; /* ensures it stays above the canvas */
+    pointer-events: none; /* optional: lets clicks pass through */
 }
