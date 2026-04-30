@@ -89,8 +89,8 @@ export const causticMeshVertexShader = `
         vec2 slope = info.ba * 2.0 - 1.0;
         vec3 normal = normalize(vec3(-slope.x, 1.0, -slope.y));
 
-        vec3 baseRay = refract(lightRay, vec3(0.0, 1.0, 0.0), 1.0 / 1.333); // uses snell's law :D air to water
-        vec3 refractedRay = refract(lightRay, normal, 1.0 / 1.333); 
+        vec3 baseRay = refract(lightRay, vec3(0.0, 1.0, 0.0), IOR_AIR / IOR_WATER); // uses snell's law :D air to water
+        vec3 refractedRay = refract(lightRay, normal, IOR_AIR / IOR_WATER); 
 
         // where light hits floor without waves
         vOldPos = projectToFloor(worldFlat, baseRay);

@@ -79,7 +79,7 @@ export const waterFragShader = `
     precision highp float;
 
     uniform sampler2D heightmap;
-    uniform samplerCube uEnvMap;
+    uniform samplerCube uEnvMap; // cube map
     uniform vec3 lightDir;
 
     varying vec2 vUv;
@@ -90,43 +90,47 @@ export const waterFragShader = `
 
     void main() {
         vec2 coord = vUv;
+
+        // read height/slope info
         vec4 info = texture2D(heightmap, coord);
 
+        // fake raymarching through waves -> got this idea from evan wallace's code
         for (int i = 0; i < 5; i++) {
             coord += info.ba * 0.005;
             info = texture2D(heightmap, coord);
         }
-
         vec2 slope = info.ba;
-
         slope = clamp(slope, vec2(-0.999), vec2(0.999));
 
+        // find normal from slope
         float normalY = sqrt(max(0.0, 1.0 - dot(slope, slope)));
         vec3 normal = normalize(vec3(slope.x, normalY, slope.y));
 
+        // reflection and refraction
         vec3 incomingRay = normalize(vPos - cameraPosition);
-
         vec3 reflectedRay = reflect(incomingRay, normal);
         vec3 refractedRay = refract(incomingRay, normal, IOR_AIR / IOR_WATER);
 
+        // sample environment for reflections
         vec3 reflectedColor = textureCube(uEnvMap, reflectedRay).rgb;
+
+        // fake brine color 
         vec3 shallowWater = vec3(0.58, 0.68, 0.22);
         vec3 deepWater = vec3(0.20, 0.28, 0.06);
         vec3 refractedColor = mix(deepWater, shallowWater, 0.35);
 
-        float fresnel = mix(
-            0.25,
-            1.0,
-            pow(1.0 - max(dot(normal, -incomingRay), 0.0), 3.0)
-        );
+        // fresnel effect
+        float fresnel = mix(0.25, 1.0, pow(1.0 - max(dot(normal, -incomingRay), 0.0), 3.0));
 
+        // mix refraction, reflection, and fresnel effect
         vec3 color = mix(refractedColor, reflectedColor, fresnel);
 
+        // specular highlight
         vec3 L = normalize(lightDir);
         float spec = pow(max(dot(reflect(-L, normal), -incomingRay), 0.0), 250.0);
-        color += vec3(spec) * vec3(3.0, 2.4, 1.8);
+        color += vec3(spec) * vec3(3.0, 2.4, 1.8); // warm highlight
 
-        gl_FragColor = vec4(color, 0.72);
+        gl_FragColor = vec4(color, 0.70); // slightly transparent
     }
 `;
 
@@ -156,9 +160,9 @@ export const waterNormalDebugFragmentShader = `
 
         vec2 slope = clamp(info.ba, vec2(-0.999), vec2(0.999));
         float y = sqrt(max(0.0, 1.0 - dot(slope, slope)));
-
         vec3 n = normalize(vec3(slope.x, y, slope.y));
 
+        // visualizes normals as rgb colors (-1,1 to  0,1)
         gl_FragColor = vec4(n * 0.5 + 0.5, 1.0);
     }
 `;
@@ -168,12 +172,13 @@ export const dynamicWallVertexShader = `
     uniform float heightScale;
     uniform float waterY;
     uniform float floorY;
-    uniform int side;
+    uniform int side; // which wall this is but not really lol
 
     varying vec2 vUv;
-    varying vec3 vPos;
+    varying vec3 vWorldPos;
     varying float vWallFade;
 
+    // edge of water texture
     vec2 getEdgeUv(vec2 uv) {
         if (side == 0) {
             return vec2(1.0 - uv.x, 0.0);
@@ -189,20 +194,19 @@ export const dynamicWallVertexShader = `
     void main() {
         vUv = uv;
 
+        // sample water height at edge
         vec2 edgeUv = getEdgeUv(uv);
         float h = texture2D(heightmap, edgeUv).r;
 
+        // find top of water surface
         float topY = waterY + h * heightScale;
+        // get mix floor and water surface along wall height
         float finalY = mix(floorY, topY, uv.y);
-
         vec3 pos = position;
-
         vec4 worldPos = modelMatrix * vec4(pos, 1.0);
-        worldPos.y = finalY;
-
-        vPos = worldPos.xyz;
-        vWallFade = uv.y;
-
+        worldPos.y = finalY; // set height
+        vWorldPos = worldPos.xyz;
+        vWallFade = uv.y; 
         gl_Position = projectionMatrix * viewMatrix * worldPos;
     }
 `;
@@ -214,32 +218,37 @@ export const dynamicWallFragmentShader = `
     uniform vec3 lightDir;
 
     varying vec2 vUv;
-    varying vec3 vPos;
+    varying vec3 vWorldPos;
     varying float vWallFade;
 
     void main() {
-        vec3 viewDir = normalize(vPos - cameraPosition);
+        vec3 viewDir = normalize(vWorldPos - cameraPosition);
 
-        vec3 wallNormal = normalize(cross(dFdx(vPos), dFdy(vPos)));
+        // compute normal from derivatives since wall is deformed
+        vec3 wallNormal = normalize(cross(dFdx(vWorldPos), dFdy(vWorldPos)));
+
+        // fix backfaces
         if (!gl_FrontFacing) {
             wallNormal *= -1.0;
         }
 
+        // reflection
         vec3 reflectedRay = reflect(viewDir, wallNormal);
         vec3 reflectedColor = textureCube(uEnvMap, reflectedRay).rgb;
 
+        // fake brine color 
         vec3 deepWater = vec3(0.18, 0.26, 0.08);
         vec3 shallowWater = vec3(0.55, 0.68, 0.22);
-
         vec3 baseColor = mix(deepWater, shallowWater, vWallFade);
         vec3 color = mix(baseColor, reflectedColor, 0.05);
 
+        // specular highlight
         vec3 L = normalize(lightDir);
-        float spec = pow(max(dot(reflect(-L, wallNormal), -viewDir), 0.0), 120.0);
-        color += vec3(spec) * vec3(1.5, 1.3, 1.0);
+        float spec = pow(max(dot(reflect(-L, wallNormal), -viewDir), 0.0), 250.0);
+        color += vec3(spec) * vec3(3.0, 2.4, 1.8);  // warm highlight
 
+        // transparency increases toward top
         float alpha = mix(0.45, 0.78, vWallFade);
-
         gl_FragColor = vec4(color, alpha);
     }
 `;
