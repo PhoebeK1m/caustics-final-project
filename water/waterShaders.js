@@ -215,7 +215,7 @@ export const dynamicWallFragmentShader = `
         vec3 shallowWater = vec3(0.55, 0.68, 0.22);
 
         vec3 baseColor = mix(deepWater, shallowWater, vWallFade);
-        vec3 color = mix(baseColor, reflectedColor, 0.25);
+        vec3 color = mix(baseColor, reflectedColor, 0.05);
 
         vec3 L = normalize(lightDir);
         float spec = pow(max(dot(reflect(-L, wallNormal), -viewDir), 0.0), 120.0);

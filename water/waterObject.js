@@ -71,13 +71,6 @@ export function createWaterObjects({ scene, envTexture, size, waterSize }) {
     wall4.position.set(halfWater, 0, 0);
     scene.add(wall4);
 
-    const wallMaterial = [
-        wall1Material,
-        wall2Material,
-        wall3Material,
-        wall4Material
-    ];
-
     const ballRadius = 0.35;
     const ball = new THREE.Group();
 
@@ -112,7 +105,6 @@ export function createWaterObjects({ scene, envTexture, size, waterSize }) {
         wall2,
         wall3,
         wall4,
-        wallMaterial,
         ball,
         ballRadius
     };

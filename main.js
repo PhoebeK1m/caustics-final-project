@@ -23,55 +23,51 @@ gui.add(gui_params, 'showCausticPlane');
 gui.add(gui_params, 'intensity', 0, 3);
 
 // scene objects and materials
-const meshesToRender = new Map();
-const meshMaterials = new Map();
-const meshesToNotRender = new Map();
-const sceneMesh = new Map();
+const meshesToRender = new Map(); // contributes to caustic
+const meshMaterials = new Map(); // all materials
+const meshesToNotRender = new Map(); // does not contribute to caustics
+const sceneMesh = new Map(); // receives caustic texture
 
 // set up webgl/three scene
 const canvas = document.querySelector('canvas.webgl');
 const scene = new THREE.Scene();
-const sizes = {
-    width: window.innerWidth,
-    height: window.innerHeight,
-};
+const sizes = { width: window.innerWidth, height: window.innerHeight };
 const camera = new THREE.PerspectiveCamera(65, sizes.width / sizes.height, 0.1, 1000);
-camera.position.z = 10; // set camera infront of object
-
+camera.position.z = 10;
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 renderer.setSize(sizes.width, sizes.height);
 
-// camera movement
+// camera controls
 const controls = new OrbitControls(camera, canvas);
 controls.minDistance = 6; 
 controls.maxDistance = 20;
-// controls.enableZoom = false; 
 controls.enableDamping = true;
 
+// cube map
 const envTexture = createEnvTexture(scene);
 
-// normal plane
+// normal preview plane
 camera.add(normalPlane);
-// caustics plane
+// caustic preview plane
 camera.add(causticPlane);
 scene.add(camera);
 
 // scene lights
-scene.add(new THREE.HemisphereLight(0xffffff, 0x224466, 1.2));
-
 const sun = new THREE.DirectionalLight(0xffffff, 1.5);
 sun.position.set(3, 6, 4);
 scene.add(sun);
 
-// spot light
+// spot light -> "the light space"
 const spotLight = new THREE.SpotLight(0xffffff, 100); 
 spotLight.position.set(0, 5, 0);
 spotLight.penumbra = 0.5;
 spotLight.decay = 2;
 scene.add(spotLight);
 
+// water simulation function
 const waterSim = createWaterSimulation({ renderer, size: 256 });
+// water simulation objects
 const {
     water,
     waterMaterial,
@@ -80,8 +76,7 @@ const {
     wall2,
     wall3,
     wall4,
-    wallMaterial,
-    ball,
+    ball, // i had it originally as a ball but changed the mesh to a pickle : )
     ballRadius
 } = createWaterObjects({
     scene,
@@ -89,6 +84,7 @@ const {
     size: 256,
     waterSize: 5
 });
+// add objects to respective dictionaries
 meshesToRender.set("water", water);
 meshMaterials.set("water", waterMaterial);
 meshesToNotRender.set("ball", ball);
