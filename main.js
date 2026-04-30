@@ -34,6 +34,7 @@ const scene = new THREE.Scene();
 const sizes = { width: window.innerWidth, height: window.innerHeight };
 const camera = new THREE.PerspectiveCamera(65, sizes.width / sizes.height, 0.1, 1000);
 camera.position.z = 10;
+camera.position.y = 5;
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 renderer.setSize(sizes.width, sizes.height);
