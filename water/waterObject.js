@@ -3,7 +3,7 @@ import { createFloorMaterial, createWaterMaterial, createDynamicWallMaterial } f
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 
 // go from world xz position to water uv space (aka 0 to 1)
-export function getWaterUvFromWorld(x, z, waterSize) {
+export function getWaterUVFromWorld(x, z, waterSize) {
     return new THREE.Vector2(
         THREE.MathUtils.clamp((x / waterSize) + 0.5, 0, 1),
         THREE.MathUtils.clamp((z / waterSize) + 0.5, 0, 1)

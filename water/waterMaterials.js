@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { waterVertexShader, waterFragShader, waterNormalDebugVertexShader, waterNormalDebugFragmentShader, dynamicWallVertexShader, dynamicWallFragmentShader } from './waterShaders.js';
 
+// TODO fix cube map...
 export function createEnvTexture(scene) {
     const loader = new THREE.CubeTextureLoader();
     const envTexture = loader.load(
