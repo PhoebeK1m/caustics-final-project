@@ -96,6 +96,7 @@ export const causticMeshFragmentShader = `
 
     varying vec3 vOldPos;
     varying vec3 vNewPos;
+    uniform vec3 uCausticColor;
 
     void main() {
         float oldArea = length(cross(dFdx(vOldPos), dFdy(vOldPos)));
@@ -110,7 +111,8 @@ export const causticMeshFragmentShader = `
         c = pow(c, 2.6);
 
         c = clamp(c, 0.0, 12.0);
-
-        gl_FragColor = vec4(vec3(c * uIntensity), 1.0);
+        vec3 baseBlue = vec3(0.2, 0.6, 1.0);
+        vec3 causticColor = baseBlue * c * uIntensity;
+        gl_FragColor = vec4(causticColor, 1.0);
 }
 `;

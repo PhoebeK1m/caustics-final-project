@@ -7,7 +7,7 @@ export const getReceiveCausticMaterial = () => {
         uCausticTexture: { value: null },
         uCausticMatrix: { value: new THREE.Matrix4() },
         uBaseColor: { value: new THREE.Color("#000000") },
-        uCausticStrength: { value: 5.0 },
+        uCausticStrength: { value: 0 },
         },
         vertexShader: causticVertexShader,
         fragmentShader: receiveCausticMaterialFragmentShader,
