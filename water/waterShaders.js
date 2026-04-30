@@ -1,3 +1,26 @@
+export const waterVertexShader = `
+    uniform sampler2D heightmap; // simulation texture
+    uniform float heightScale; // ripple height
+
+    varying vec2 vUv;
+    varying vec3 vPos;
+
+    void main() {
+        vUv = uv;
+
+        // read height from simulation
+        vec4 info = texture2D(heightmap, uv);
+        vec3 pos = position;
+
+        // change vertex by water height
+        pos.y += info.r * heightScale;
+
+        vec4 worldPos = modelMatrix * vec4(pos, 1.0);
+        vPos = worldPos.xyz;
+        gl_Position = projectionMatrix * viewMatrix * worldPos;
+    }
+`;
+
 export const simulationFragmentShader = `
     uniform vec2 mouse; // mouse pos in uv space
     uniform float mouseSize; // mouse ripple area
@@ -52,28 +75,6 @@ export const simulationFragmentShader = `
     }
 `;
 
-export const waterVertexShader = `
-    uniform sampler2D heightmap;
-    uniform float heightScale;
-
-    varying vec2 vUv;
-    varying vec3 vWorldPos;
-
-    void main() {
-        vUv = uv;
-
-        vec4 info = texture2D(heightmap, uv);
-
-        vec3 pos = position;
-        pos.y += info.r * heightScale;
-
-        vec4 worldPos = modelMatrix * vec4(pos, 1.0);
-        vWorldPos = worldPos.xyz;
-
-        gl_Position = projectionMatrix * viewMatrix * worldPos;
-    }
-`;
-
 export const waterFragShader = `
     precision highp float;
 
@@ -82,7 +83,7 @@ export const waterFragShader = `
     uniform vec3 lightDir;
 
     varying vec2 vUv;
-    varying vec3 vWorldPos;
+    varying vec3 vPos;
 
     const float IOR_AIR = 1.0;
     const float IOR_WATER = 1.333;
@@ -103,7 +104,7 @@ export const waterFragShader = `
         float normalY = sqrt(max(0.0, 1.0 - dot(slope, slope)));
         vec3 normal = normalize(vec3(slope.x, normalY, slope.y));
 
-        vec3 incomingRay = normalize(vWorldPos - cameraPosition);
+        vec3 incomingRay = normalize(vPos - cameraPosition);
 
         vec3 reflectedRay = reflect(incomingRay, normal);
         vec3 refractedRay = refract(incomingRay, normal, IOR_AIR / IOR_WATER);
@@ -170,7 +171,7 @@ export const dynamicWallVertexShader = `
     uniform int side;
 
     varying vec2 vUv;
-    varying vec3 vWorldPos;
+    varying vec3 vPos;
     varying float vWallFade;
 
     vec2 getEdgeUv(vec2 uv) {
@@ -199,7 +200,7 @@ export const dynamicWallVertexShader = `
         vec4 worldPos = modelMatrix * vec4(pos, 1.0);
         worldPos.y = finalY;
 
-        vWorldPos = worldPos.xyz;
+        vPos = worldPos.xyz;
         vWallFade = uv.y;
 
         gl_Position = projectionMatrix * viewMatrix * worldPos;
@@ -213,13 +214,13 @@ export const dynamicWallFragmentShader = `
     uniform vec3 lightDir;
 
     varying vec2 vUv;
-    varying vec3 vWorldPos;
+    varying vec3 vPos;
     varying float vWallFade;
 
     void main() {
-        vec3 viewDir = normalize(vWorldPos - cameraPosition);
+        vec3 viewDir = normalize(vPos - cameraPosition);
 
-        vec3 wallNormal = normalize(cross(dFdx(vWorldPos), dFdy(vWorldPos)));
+        vec3 wallNormal = normalize(cross(dFdx(vPos), dFdy(vPos)));
         if (!gl_FrontFacing) {
             wallNormal *= -1.0;
         }
