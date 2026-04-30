@@ -3,7 +3,7 @@ import GUI from 'lil-gui';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { torusknot, torusmaterial, loadJuice, juicematerial } from "./objects.js";
 import { normalCamera, normalRenderTarget, normalMaterial, normalPlane } from './rendertarget/normalRenderTargets.js';
-import { causticRenderTarget, causticMap, causticQuad, causticPlane, receiveCausticMaterial } from './rendertarget/causticRenderTargets.js';
+import { causticRenderTarget, causticPlane, receiveCausticMaterial } from './rendertarget/causticRenderTargets.js';
 import { depthRenderTarget, depthMaterial, depthPlane } from './rendertarget/depthRenderTargets.js';
 import { createEnvTexture, waterNormalDebugMaterial } from './water/waterMaterials.js';
 import { createWaterSimulation } from './water/waterMovement.js';
@@ -219,10 +219,6 @@ const tick = () => {
 
     water.material = oldMaterial;
     water.visible = oldVisible;
-
-    causticPlane.material.uniforms.uTexture.value = causticRenderTarget.texture;
-    causticPlane.material.uniforms.uAberration.value = gui_params.chromaticAberration;
-    causticPlane.material.uniforms.uChromatic.value = gui_params.showChromatic;
 
     // after setting receiveCausticMaterial uniforms
     receiveCausticMaterial.uniforms.uCausticTexture.value = causticRenderTarget.texture;
