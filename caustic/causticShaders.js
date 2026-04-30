@@ -22,32 +22,12 @@ export const receiveCausticMaterialFragmentShader = `
     uniform float uWaterSize;
     uniform float uWaterY;
     uniform vec3 uLightDir;
-    uniform float uReceiverMode;
 
     varying vec3 vPos;
 
-    vec2 floorUV(vec3 p) {
-        return (p.xz - uWaterCenter.xz) / uWaterSize + 0.5;
-    }
-
-    vec2 wallUV(vec3 p) {
-        vec3 ray = normalize(uLightDir);
-
-        float t = (uWaterY - p.y) / ray.y;
-        vec3 hitWater = p + ray * t;
-
-        return (hitWater.xz - uWaterCenter.xz) / uWaterSize + 0.5;
-    }
-
     void main() {
         vec2 causticUV;
-
-        if (uReceiverMode < 0.5) {
-            causticUV = floorUV(vPos);
-        } else {
-            causticUV = wallUV(vPos);
-        }
-
+        causticUV = (vPos.xz - uWaterCenter.xz) / uWaterSize + 0.5;
         vec3 caustic = vec3(0.0);
 
         if (

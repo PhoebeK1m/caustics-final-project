@@ -7,14 +7,10 @@ export const getReceiveCausticMaterial = () => {
             uCausticTexture: { value: null },
             uBaseColor: { value: new THREE.Color("#000000") },
             uCausticStrength: { value: 0 },
-
             uWaterCenter: { value: new THREE.Vector3() },
             uWaterSize: { value: 5 },
             uWaterY: { value: 0 },
             uLightDir: { value: new THREE.Vector3(0, -1, 0) },
-
-            // 0 = floor, 1 = wall
-            uReceiverMode: { value: 0 },
         },
         vertexShader: causticVertexShader,
         fragmentShader: receiveCausticMaterialFragmentShader,

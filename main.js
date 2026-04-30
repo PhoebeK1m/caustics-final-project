@@ -97,12 +97,6 @@ meshesToNotRender.set("wall2", wall2);
 meshesToNotRender.set("wall3", wall3);
 meshesToNotRender.set("wall4", wall4);
 
-const floorCausticMaterial = getReceiveCausticMaterial();
-const wallCausticMaterial = getReceiveCausticMaterial();
-
-floorCausticMaterial.uniforms.uReceiverMode.value = 0;
-wallCausticMaterial.uniforms.uReceiverMode.value = 1;
-
 const waterBall = createWaterBallController({
     renderer,
     camera,
