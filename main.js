@@ -190,8 +190,6 @@ const tick = () => {
     receiveCausticMaterial.uniforms.uCausticStrength.value = gui_params.intensity;
     receiveCausticMaterial.uniforms.uWaterCenter.value.copy(water.position);
     receiveCausticMaterial.uniforms.uWaterSize.value = WATERSIZE;
-    receiveCausticMaterial.uniforms.uWaterY.value = water.position.y;
-    receiveCausticMaterial.uniforms.uLightDir.value = lightDir;
 
     // set floor to receive caustic
     for (const [name, mesh] of sceneMesh) {

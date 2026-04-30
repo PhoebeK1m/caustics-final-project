@@ -9,8 +9,6 @@ export const getReceiveCausticMaterial = () => {
             uCausticStrength: { value: 0 },
             uWaterCenter: { value: new THREE.Vector3() },
             uWaterSize: { value: 5 },
-            uWaterY: { value: 0 },
-            uLightDir: { value: new THREE.Vector3(0, -1, 0) },
         },
         vertexShader: causticVertexShader,
         fragmentShader: receiveCausticMaterialFragmentShader,
@@ -28,7 +26,7 @@ export const causticMeshMaterial = new THREE.ShaderMaterial({
     fragmentShader: causticMeshFragmentShader,
     uniforms: {
         uWaterTexture: { value: null },
-        uLightDir: { value: new THREE.Vector3() },
+        uLightDir: { value: new THREE.Vector3(0, -1, 0) },
         uWaterSize: { value: 5 },
         uFloorY: { value: 0 },
         uIntensity: { value: 1 },
