@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { GPUComputationRenderer } from 'three/addons/misc/GPUComputationRenderer.js';
-import { simFragShader } from './waterShaders.js';
+import { simulationFragmentShader } from './waterShaders.js';
 
 export function createWaterSimulation({ renderer, size }) {
     const gpu = new GPUComputationRenderer(size, size, renderer);
@@ -15,7 +15,7 @@ export function createWaterSimulation({ renderer, size }) {
         data[i + 3] = 0;
     }
 
-    const waterVariable = gpu.addVariable('heightmap', simFragShader, waterTex);
+    const waterVariable = gpu.addVariable('heightmap', simulationFragmentShader, waterTex);
     gpu.setVariableDependencies(waterVariable, [waterVariable]);
 
     waterVariable.material.uniforms.mouse = { value: new THREE.Vector2(999, 999) };

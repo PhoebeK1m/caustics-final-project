@@ -1,37 +1,53 @@
-export const simFragShader = `
-    uniform vec2 mouse;
-    uniform float mouseSize;
-    uniform float viscosity;
-    uniform float waveStrength;
-    uniform float rippleStrength;
-    uniform float slopeStrength;
+export const simulationFragmentShader = `
+    uniform vec2 mouse; // mouse pos in uv space
+    uniform float mouseSize; // mouse ripple area
+    uniform float viscosity; // damping amount -> lower values make waves fade faster
+    uniform float waveStrength; // height differences push wave
+    uniform float rippleStrength; // how much height to add
+    uniform float slopeStrength; // scales the stored slope values
 
     void main() {
+        // turn the screen space pos into uv coordinates
         vec2 uv = gl_FragCoord.xy / resolution.xy;
+
+        // one pixel step in uv space
         vec2 texel = 1.0 / resolution.xy;
 
-        vec4 current = texture2D(heightmap, uv);
+        // get current simulation data at this pixel
+        // r stores height, g stores velocity, b/a store slope from the previous frame
+        vec4 state = texture2D(heightmap, uv);
 
-        float height = current.r;
-        float velocity = current.g;
+        float height = state.r;
+        float velocity = state.g;
 
-        float hL = texture2D(heightmap, uv - vec2(texel.x, 0.0)).r;
-        float hR = texture2D(heightmap, uv + vec2(texel.x, 0.0)).r;
-        float hD = texture2D(heightmap, uv - vec2(0.0, texel.y)).r;
-        float hU = texture2D(heightmap, uv + vec2(0.0, texel.y)).r;
+        // sample the height of the four neighboring pixels
+        // used to figure out how much this pixel differs from its surroundings
+        float heightLeft  = texture2D(heightmap, uv - vec2(texel.x, 0.0)).r;
+        float heightRight = texture2D(heightmap, uv + vec2(texel.x, 0.0)).r;
+        float heightDown  = texture2D(heightmap, uv - vec2(0.0, texel.y)).r;
+        float heightUp    = texture2D(heightmap, uv + vec2(0.0, texel.y)).r;
+        float neighborAverage = (heightLeft + heightRight + heightDown + heightUp) * 0.25;
 
-        float average = (hL + hR + hD + hU) * 0.25;
+        // push velocity based on the difference between curr pixel and its neighbors
+        velocity += (neighborAverage - height) * waveStrength;
 
-        velocity += (average - height) * waveStrength;
+        // reduce velocity a little every frame so the water eventually calms down
         velocity *= viscosity;
+
+        // move the height by the current velocity
         height += velocity;
 
-        float d = distance(uv, mouse);
-        height += exp(-d * d / mouseSize) * rippleStrength;
+        // disturb around the mouse
+        float mouseDistance = distance(uv, mouse);
+        float ripple = exp(-(mouseDistance * mouseDistance) / mouseSize) * rippleStrength;
+        height += ripple;
 
-        float slopeX = (hL - hR) * slopeStrength;
-        float slopeZ = (hD - hU) * slopeStrength;
+        // calculate the local slope
+        float slopeX = (heightLeft - heightRight) * slopeStrength;
+        float slopeZ = (heightDown - heightUp) * slopeStrength;
 
+        // save info into rgba texture :D
+        // r = height, g = velocity, b = x slope, a = z slope
         gl_FragColor = vec4(height, velocity, slopeX, slopeZ);
     }
 `;
