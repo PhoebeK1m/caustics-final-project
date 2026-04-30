@@ -18,18 +18,14 @@ let gui_params = {
     showCausticPlane: true,
     showDepthPlane: true,
     showWater: true,
-    showChromatic: true,
     intensity: 0.5,
-    chromaticAberration: 0.03,
 };
 
 gui.add(gui_params, 'showNormalPlane');
 gui.add(gui_params, 'showCausticPlane');
 gui.add(gui_params, 'showDepthPlane');
 gui.add(gui_params, 'showWater');
-gui.add(gui_params, 'showChromatic');
 gui.add(gui_params, 'intensity', 0, 3);
-gui.add(gui_params, 'chromaticAberration', 0, 3);
 
 // scene objects and materials
 const meshesToRender = new Map();
@@ -183,17 +179,17 @@ const tick = () => {
     }
 
     // render receiver depth from light view
-    for (const [name, mesh] of meshesToRender) {
-        mesh.visible = false;
-    }
-    for (const [name, mesh] of sceneMesh) {
-        mesh.visible = true;
-        mesh.material = depthMaterial;
-    }
-    renderer.setRenderTarget(depthRenderTarget);
-    renderer.setClearColor(0xffffff, 1);
-    renderer.clear();
-    renderer.render(scene, normalCamera);
+    // for (const [name, mesh] of meshesToRender) {
+    //     mesh.visible = false;
+    // }
+    // for (const [name, mesh] of sceneMesh) {
+    //     mesh.visible = true;
+    //     mesh.material = depthMaterial;
+    // }
+    // renderer.setRenderTarget(depthRenderTarget);
+    // renderer.setClearColor(0xffffff, 1);
+    // renderer.clear();
+    // renderer.render(scene, normalCamera);
     // restore
     for (const [name, mesh] of meshesToRender) { 
         mesh.visible = true;
