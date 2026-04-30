@@ -1,6 +1,7 @@
 import * as THREE from "three";
 import { causticVertexShader, receiveCausticMaterialFragmentShader, causticMeshVertexShader, causticMeshFragmentShader } from "./causticShaders.js";
 
+// TODO add pickle shadow to caustic texture
 export const getReceiveCausticMaterial = () => {
     const material = new THREE.ShaderMaterial({
         uniforms: {
