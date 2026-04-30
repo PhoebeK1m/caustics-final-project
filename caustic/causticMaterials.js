@@ -22,8 +22,6 @@ export const getReceiveCausticMaterial = () => {
 };
 
 export const causticMeshMaterial = new THREE.ShaderMaterial({
-    vertexShader: causticMeshVertexShader,
-    fragmentShader: causticMeshFragmentShader,
     uniforms: {
         uWaterTexture: { value: null },
         uLightDir: { value: new THREE.Vector3(0, -1, 0) },
@@ -31,6 +29,8 @@ export const causticMeshMaterial = new THREE.ShaderMaterial({
         uFloorY: { value: 0 },
         uIntensity: { value: 1 },
     },
+    vertexShader: causticMeshVertexShader,
+    fragmentShader: causticMeshFragmentShader,
     depthWrite: false,
     depthTest: false,
     transparent: true,
