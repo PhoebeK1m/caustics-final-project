@@ -20,7 +20,7 @@ let gui_params = {
 
 gui.add(gui_params, 'showNormalPlane');
 gui.add(gui_params, 'showCausticPlane');
-gui.add(gui_params, 'intensity', 0, 3);
+gui.add(gui_params, 'intensity', 0, 10);
 
 // scene objects and materials
 const meshesToRender = new Map(); // contributes to caustic
@@ -66,7 +66,9 @@ spotLight.decay = 2;
 scene.add(spotLight);
 
 // water simulation function
-const waterSim = createWaterSimulation({ renderer, size: 256 });
+const SIZE = 256;
+const WATERSIZE = 5;
+const waterSim = createWaterSimulation({ renderer, size: SIZE });
 // water simulation objects
 const {
     water,
@@ -82,8 +84,8 @@ const {
 } = createWaterObjects({
     scene,
     envTexture,
-    size: 256,
-    waterSize: 5
+    size: SIZE,
+    waterSize: WATERSIZE
 });
 // add objects to respective dictionaries
 meshesToRender.set("water", water);
@@ -110,15 +112,15 @@ const waterBall = createWaterBallController({
     ballRadius,
     waterSim,
     waterMaterial,
-    waterSize: 5
+    waterSize: WATERSIZE
 });
 
 //animation loop
 const tick = () => {
+    // update water simulation
     waterSim.compute();
-    water.material.uniforms.heightmap.value = waterSim.getHeightmapTexture();
     const heightmapTexture = waterSim.getHeightmapTexture();
-
+    water.material.uniforms.heightmap.value = heightmapTexture;
     for (const wall of [wall1, wall2, wall3, wall4]) {
         wall.material.uniforms.heightmap.value = heightmapTexture;
         wall.material.uniforms.waterSize.value = 5;
@@ -129,14 +131,12 @@ const tick = () => {
 
     // update controls for damping camera movement
     controls.update();
-    normalPlane.visible = false;
-    causticPlane.visible = false;
 
-    // render
-    // update camera position with light
+    // update light camera position with light
     normalCamera.position.copy(spotLight.position);
     normalCamera.lookAt(floor.position);
 
+    // normal render
     // use normals for material
     for (const [name, mesh] of meshesToRender) {
         if (!mesh) {
@@ -150,6 +150,7 @@ const tick = () => {
             mesh.material.side = THREE.BackSide;
         }
     }
+    // make invisible for preview
     for (const [name, mesh] of meshesToNotRender) {
         mesh.visible = false;
     }
@@ -161,13 +162,14 @@ const tick = () => {
     renderer.setRenderTarget(normalRenderTarget);
     renderer.setClearColor(0x000000, 1);
     renderer.clear();
-    // render normals scene
+    // render normals preview
     renderer.render(scene, normalCamera);
     
-    // set back to original material
+    // reset to original material
     for (const [name, mesh] of meshesToRender) {
         mesh.material = meshMaterials.get(name);
     }
+    // make visible again
     for (const [name, mesh] of sceneMesh) {
         mesh.visible = true;
     }
@@ -175,68 +177,38 @@ const tick = () => {
         mesh.visible = true;
     }
 
-    const oldMaterial = water.material;
-    const oldVisible = water.visible;
-
-    water.visible = true;
+    // render caustic texture
     water.material = causticMeshMaterial;
-
-    causticMeshMaterial.uniforms.uWaterTexture.value = waterSim.getHeightmapTexture();
-
+    causticMeshMaterial.uniforms.uWaterTexture.value = heightmapTexture;
     const lightDir = spotLight.position.clone().sub(water.position).normalize();
-    causticMeshMaterial.uniforms.uLightDir.value.copy(lightDir);
-
-    causticMeshMaterial.uniforms.uWaterSize.value = 5;
+    causticMeshMaterial.uniforms.uLightDir.value = lightDir;
+    causticMeshMaterial.uniforms.uWaterSize.value = WATERSIZE;
     causticMeshMaterial.uniforms.uFloorY.value = floor.position.y;
     causticMeshMaterial.uniforms.uIntensity.value = gui_params.intensity;
-
     renderer.setRenderTarget(causticRenderTarget);
-    renderer.setClearColor(0x28301c, 1);
+    renderer.setClearColor(0x28301c, 1); // set clear color to pickle brine color
     renderer.clear();
-
     renderer.render(water, normalCamera);
+    water.material = meshMaterials.get("water"); // reset water
 
-    water.material = oldMaterial;
-    water.visible = oldVisible;
-
+    // set floor material uniforms
     receiveCausticMaterial.uniforms.uCausticTexture.value = causticRenderTarget.texture;
-    receiveCausticMaterial.uniforms.uCausticStrength.value = gui_params.intensity * 10;
-
+    receiveCausticMaterial.uniforms.uCausticStrength.value = gui_params.intensity;
     receiveCausticMaterial.uniforms.uWaterCenter.value.copy(water.position);
-    receiveCausticMaterial.uniforms.uWaterSize.value = 5;
+    receiveCausticMaterial.uniforms.uWaterSize.value = WATERSIZE;
     receiveCausticMaterial.uniforms.uWaterY.value = water.position.y;
+    receiveCausticMaterial.uniforms.uLightDir.value = lightDir;
 
-    receiveCausticMaterial.uniforms.uLightDir.value.copy(lightDir);
-
+    // set floor to receive caustic
     for (const [name, mesh] of sceneMesh) {
         mesh.material = receiveCausticMaterial;
-
-        if (name === "floor") {
-            receiveCausticMaterial.uniforms.uReceiverMode.value = 0;
-        } else {
-            receiveCausticMaterial.uniforms.uReceiverMode.value = 1;
-        }
-    }
-    for (const mat of [floorCausticMaterial, wallCausticMaterial]) {
-        mat.uniforms.uCausticTexture.value = causticRenderTarget.texture;
-        mat.uniforms.uCausticStrength.value = gui_params.intensity * 10;
-
-        mat.uniforms.uWaterCenter.value.copy(water.position);
-        mat.uniforms.uWaterSize.value = 5;
-        mat.uniforms.uWaterY.value = water.position.y;
-
-        mat.uniforms.uLightDir.value.copy(lightDir);
     }
 
-    for (const [name, mesh] of sceneMesh) {
-        mesh.material = name === "floor"
-            ? floorCausticMaterial
-            : wallCausticMaterial;
-    }
-
+    // previews visibility
     normalPlane.visible = gui_params.showNormalPlane;
     causticPlane.visible = gui_params.showCausticPlane;
 
+    // render full scene
     renderer.setRenderTarget(null);
     renderer.setClearColor(0x7ea1bf, 1);
     renderer.render(scene, camera);
