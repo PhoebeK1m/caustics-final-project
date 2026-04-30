@@ -104,12 +104,12 @@ const {
 meshesToRender.set("water", water);
 meshMaterials.set("water", waterMaterial);
 meshesToNotRender.set("ball", ball);
-wall1.visible = false;
-wall2.visible = false;
-wall3.visible = false;
-wall4.visible = false;
 floor.material = depthMaterial;
 sceneMesh.set("floor", floor);
+sceneMesh.set("wall1", wall1);
+sceneMesh.set("wall2", wall2);
+sceneMesh.set("wall3", wall3);
+sceneMesh.set("wall4", wall4);
 
 const waterBall = createWaterBallController({
     renderer,
@@ -229,7 +229,9 @@ const tick = () => {
     )
     );
     receiveCausticMaterial.uniforms.uCausticStrength.value = gui_params.intensity * 10;
-    floor.material = receiveCausticMaterial;
+    for (const [name, mesh] of sceneMesh) {
+        mesh.material = receiveCausticMaterial;
+    }
 
     normalPlane.visible = gui_params.showNormalPlane;
     causticPlane.visible = gui_params.showCausticPlane;

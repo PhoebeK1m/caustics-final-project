@@ -11,7 +11,6 @@ export const getReceiveCausticMaterial = () => {
         },
         vertexShader: causticVertexShader,
         fragmentShader: receiveCausticMaterialFragmentShader,
-        side: THREE.DoubleSide,
         depthWrite: true,
         depthTest: true,
         transparent: false,

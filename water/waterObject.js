@@ -28,23 +28,23 @@ export function createWaterObjects({ scene, envTexture, size, waterSize }) {
 
     const wallMaterial = createWallMaterial();
 
-    const wall1 = new THREE.Mesh(new THREE.PlaneGeometry(waterSize, 3.3), wallMaterial);
-    wall1.position.set(0, 0, -halfWater);
+    const wall1 = new THREE.Mesh(new THREE.PlaneGeometry(waterSize, 4), wallMaterial);
+    wall1.position.set(0, -0.65, -halfWater);
     scene.add(wall1);
 
-    const wall2 = new THREE.Mesh(new THREE.PlaneGeometry(waterSize, 3.3), wallMaterial);
+    const wall2 = new THREE.Mesh(new THREE.PlaneGeometry(waterSize, 4), wallMaterial);
     wall2.rotation.y = Math.PI / 2;
-    wall2.position.set(-halfWater, 0, 0);
+    wall2.position.set(-halfWater, -0.65, 0);
     scene.add(wall2);
 
-    const wall3 = new THREE.Mesh(new THREE.PlaneGeometry(waterSize, 3.3), wallMaterial);
+    const wall3 = new THREE.Mesh(new THREE.PlaneGeometry(waterSize, 4), wallMaterial);
     wall3.rotation.y = -Math.PI;
-    wall3.position.set(0, 0, halfWater);
+    wall3.position.set(0, -0.65, halfWater);
     scene.add(wall3);
 
-    const wall4 = new THREE.Mesh(new THREE.PlaneGeometry(waterSize, 3.3), wallMaterial);
+    const wall4 = new THREE.Mesh(new THREE.PlaneGeometry(waterSize, 4), wallMaterial);
     wall4.rotation.y = -Math.PI / 2;
-    wall4.position.set(halfWater, 0, 0);
+    wall4.position.set(halfWater, -0.65, 0);
     scene.add(wall4);
 
     const ballRadius = 0.35;
