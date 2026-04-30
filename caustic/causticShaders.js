@@ -134,7 +134,7 @@ export const causticMeshFragmentShader = `
         c = pow(c, 2.6);
 
         c = clamp(c, 0.0, 12.0);
-        vec3 baseBlue = vec3(0.2, 0.6, 1.0);
+        vec3 baseBlue = vec3(0.58, 0.68, 0.22);
         vec3 causticColor = baseBlue * c * uIntensity;
         gl_FragColor = vec4(causticColor, 1.0);
 }

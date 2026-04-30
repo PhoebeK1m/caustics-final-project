@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { createBallMaterial, createFloorMaterial, createWallMaterial, createWaterMaterial } from './waterMaterials.js';
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 
 export function getWaterUvFromWorld(x, z, waterSize) {
     return new THREE.Vector2(
@@ -48,13 +49,30 @@ export function createWaterObjects({ scene, envTexture, size, waterSize }) {
     scene.add(wall4);
 
     const ballRadius = 0.35;
-    const ball = new THREE.Mesh(
-        new THREE.SphereGeometry(ballRadius, 48, 32),
-        createBallMaterial(envTexture)
-    );
+    const ball = new THREE.Group();
 
     ball.position.set(0, ballRadius + 0.12, 0);
     scene.add(ball);
+
+    const loader = new GLTFLoader();
+
+    loader.load(
+        '/models/pickle.glb',
+        (gltf) => {
+            const pickle = gltf.scene;
+
+            // pickle.scale.set(0.3, 0.3, 0.3);
+
+            // local offset inside the movable group
+            pickle.position.set(0, 0, 0);
+
+            ball.add(pickle);
+        },
+        undefined,
+        (error) => {
+            console.error('Error loading pickle:', error);
+        }
+    );
 
     return {
         water,

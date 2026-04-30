@@ -95,8 +95,8 @@ export function createWaterBallController({
       dragDepth = THREE.MathUtils.clamp(dragDepth, -1.45, 1.35);
 
       if (pointerWorldAtDepth(e, dragDepth, dragPoint)) {
-        ball.position.x = THREE.MathUtils.clamp(dragPoint.x, -4.7, 4.7);
-        ball.position.z = THREE.MathUtils.clamp(dragPoint.z, -4.7, 4.7);
+        ball.position.x = THREE.MathUtils.clamp(dragPoint.x, -2.2, 2.2);
+        ball.position.z = THREE.MathUtils.clamp(dragPoint.z, -2.2, 2.2);
         ball.position.y = dragDepth;
       }
 
@@ -234,8 +234,14 @@ export function createWaterBallController({
       lastSurfaceSide = surfaceSide;
     }
 
-    ball.rotation.x += ballVelocity.z * 0.08;
-    ball.rotation.z -= ballVelocity.x * 0.08;
+    const wobbleStrength = 2.5;
+    const returnSpeed = 0.12;
+
+    const targetRotX = ballVelocity.z * wobbleStrength;
+    const targetRotZ = -ballVelocity.x * wobbleStrength;
+
+    ball.rotation.x = THREE.MathUtils.lerp(ball.rotation.x, targetRotX, returnSpeed);
+    ball.rotation.z = THREE.MathUtils.lerp(ball.rotation.z, targetRotZ, returnSpeed);
   }
 
   function connect() {

@@ -221,7 +221,7 @@ const tick = () => {
     causticMeshMaterial.uniforms.uIntensity.value = gui_params.intensity;
 
     renderer.setRenderTarget(causticRenderTarget);
-    renderer.setClearColor(0x0f203b, 1);
+    renderer.setClearColor(0x28301c, 1);
     renderer.clear();
 
     renderer.render(water, normalCamera);

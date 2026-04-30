@@ -93,8 +93,8 @@ export const waterFragShader = `
         vec3 refractedRay = refract(incomingRay, normal, IOR_AIR / IOR_WATER);
 
         vec3 reflectedColor = textureCube(uEnvMap, reflectedRay).rgb;
-        vec3 shallowWater = vec3(0.12, 0.75, 0.95);
-        vec3 deepWater = vec3(0.01, 0.18, 0.24);
+        vec3 shallowWater = vec3(0.58, 0.68, 0.22);
+        vec3 deepWater = vec3(0.20, 0.28, 0.06);
         vec3 refractedColor = mix(deepWater, shallowWater, 0.35);
 
         float fresnel = mix(
