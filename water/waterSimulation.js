@@ -94,6 +94,7 @@ export function createWaterBallController({
 
     // otherwise check if we clicked the water
     const waterHits = raycaster.intersectObject(water);
+    // TODO fix raycaster/intersect with water?? doesn't work 100% of the time
 
     if (waterHits.length > 0 && waterHits[0].uv) {
       pointerDown = true;

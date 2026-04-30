@@ -118,7 +118,7 @@ const tick = () => {
     water.material.uniforms.heightmap.value = heightmapTexture;
     for (const wall of [wall1, wall2, wall3, wall4]) {
         wall.material.uniforms.heightmap.value = heightmapTexture;
-        wall.material.uniforms.waterSize.value = 5;
+        wall.material.uniforms.waterSize.value = WATERSIZE;
         wall.material.uniforms.waterY.value = water.position.y;
         wall.material.uniforms.floorY.value = floor.position.y;
     }
