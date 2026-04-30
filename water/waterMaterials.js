@@ -1,15 +1,8 @@
 import * as THREE from 'three';
-import {
-    waterVertexShader,
-    waterFragShader,
-    waterNormalDebugVertexShader,
-    waterNormalDebugFragmentShader,
-    dynamicWallVertexShader,
-    dynamicWallFragmentShader
-} from './waterShaders.js';
+import { waterVertexShader, waterFragShader, waterNormalDebugVertexShader, waterNormalDebugFragmentShader, dynamicWallVertexShader, dynamicWallFragmentShader } from './waterShaders.js';
+
 export function createEnvTexture(scene) {
     const loader = new THREE.CubeTextureLoader();
-
     const envTexture = loader.load(
         [
             '/water/cubemap/xpos.jpg',
@@ -21,10 +14,8 @@ export function createEnvTexture(scene) {
         ],
         (texture) => {
             console.log('Cube texture loaded:', texture);
-            console.log('images:', texture.image); // should be array of 6
+            console.log('images:', texture.image); // should be array of 6 -> double check later
             console.log('image count:', texture.image.length);
-            // scene.background = new THREE.Color(0x4387f5);
-            // scene.environment = texture;
         },
         undefined,
         (err) => {
@@ -38,10 +29,10 @@ export function createEnvTexture(scene) {
 export function createWaterMaterial(envTexture) {
     return new THREE.ShaderMaterial({
         uniforms: {
-        heightmap: { value: null },
-        uEnvMap: { value: envTexture },
-        heightScale: { value: 3.0 },
-        lightDir: { value: new THREE.Vector3(0.4, 1.0, 0.3) }
+            heightmap: { value: null },
+            uEnvMap: { value: envTexture },
+            heightScale: { value: 3.0 },
+            lightDir: { value: new THREE.Vector3(0.0, -1.0, 0.0) }
         },
         vertexShader: waterVertexShader,
         fragmentShader: waterFragShader,
@@ -53,22 +44,6 @@ export function createWaterMaterial(envTexture) {
 
 export function createFloorMaterial() {
     return new THREE.MeshBasicMaterial({ color: 0xffffff });
-}
-
-export function createWallMaterial() {
-    return new THREE.MeshBasicMaterial({
-        color: 0xffffff,
-    });
-}
-
-export function createBallMaterial(envTexture) {
-    return new THREE.MeshStandardMaterial({
-        color: 0xff8844,
-        roughness: 0.25,
-        metalness: 0.05,
-        envMap: envTexture,
-        envMapIntensity: 0.5
-    });
 }
 
 export const waterNormalDebugMaterial = new THREE.ShaderMaterial({
@@ -90,8 +65,8 @@ export function createDynamicWallMaterial(envTexture) {
             waterSize: { value: 5.0 },
             waterY: { value: 0.0 },
             floorY: { value: -2.65 },
-            side: { value: 0 }, // 0=north, 1=west, 2=south, 3=east
-            lightDir: { value: new THREE.Vector3(0.4, 1.0, 0.3) }
+            side: { value: 0 },
+            lightDir: { value: new THREE.Vector3(0.0, -1.0, 0.0) }
         },
         vertexShader: dynamicWallVertexShader,
         fragmentShader: dynamicWallFragmentShader,
