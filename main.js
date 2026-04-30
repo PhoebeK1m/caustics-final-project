@@ -1,7 +1,6 @@
 import * as THREE from 'three';
 import GUI from 'lil-gui';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
-import { torusknot, torusmaterial, loadJuice, juicematerial } from "./objects.js";
 import { normalCamera, normalRenderTarget, normalMaterial, normalPlane } from './rendertarget/normalRenderTargets.js';
 import { causticRenderTarget, causticPlane, receiveCausticMaterial } from './rendertarget/causticRenderTargets.js';
 import { depthRenderTarget, depthMaterial, depthPlane } from './rendertarget/depthRenderTargets.js';
@@ -9,7 +8,7 @@ import { createEnvTexture, waterNormalDebugMaterial } from './water/waterMateria
 import { createWaterSimulation } from './water/waterMovement.js';
 import { createWaterObjects } from './water/waterObject.js';
 import { createWaterBallController } from './water/waterSimulation.js';
-import { causticMeshMaterial } from './caustic/causticMaterials.js';
+import { causticMeshMaterial, getReceiveCausticMaterial } from './caustic/causticMaterials.js';
 
 // gui code and global parameters
 const gui = new GUI();
@@ -106,10 +105,20 @@ meshMaterials.set("water", waterMaterial);
 meshesToNotRender.set("ball", ball);
 floor.material = depthMaterial;
 sceneMesh.set("floor", floor);
-sceneMesh.set("wall1", wall1);
-sceneMesh.set("wall2", wall2);
-sceneMesh.set("wall3", wall3);
-sceneMesh.set("wall4", wall4);
+// sceneMesh.set("wall1", wall1);
+// sceneMesh.set("wall2", wall2);
+// sceneMesh.set("wall3", wall3);
+// sceneMesh.set("wall4", wall4);
+wall1.visible = false;
+wall2.visible = false;
+wall3.visible = false;
+wall4.visible = false;
+
+const floorCausticMaterial = getReceiveCausticMaterial();
+const wallCausticMaterial = getReceiveCausticMaterial();
+
+floorCausticMaterial.uniforms.uReceiverMode.value = 0;
+wallCausticMaterial.uniforms.uReceiverMode.value = 1;
 
 const waterBall = createWaterBallController({
     renderer,
@@ -220,17 +229,39 @@ const tick = () => {
     water.material = oldMaterial;
     water.visible = oldVisible;
 
-    // after setting receiveCausticMaterial uniforms
     receiveCausticMaterial.uniforms.uCausticTexture.value = causticRenderTarget.texture;
-    receiveCausticMaterial.uniforms.uCausticMatrix.value.copy(
-    new THREE.Matrix4().multiplyMatrices(
-        normalCamera.projectionMatrix,
-        normalCamera.matrixWorldInverse
-    )
-    );
     receiveCausticMaterial.uniforms.uCausticStrength.value = gui_params.intensity * 10;
+
+    receiveCausticMaterial.uniforms.uWaterCenter.value.copy(water.position);
+    receiveCausticMaterial.uniforms.uWaterSize.value = 5;
+    receiveCausticMaterial.uniforms.uWaterY.value = water.position.y;
+
+    receiveCausticMaterial.uniforms.uLightDir.value.copy(lightDir);
+
     for (const [name, mesh] of sceneMesh) {
         mesh.material = receiveCausticMaterial;
+
+        if (name === "floor") {
+            receiveCausticMaterial.uniforms.uReceiverMode.value = 0;
+        } else {
+            receiveCausticMaterial.uniforms.uReceiverMode.value = 1;
+        }
+    }
+    for (const mat of [floorCausticMaterial, wallCausticMaterial]) {
+        mat.uniforms.uCausticTexture.value = causticRenderTarget.texture;
+        mat.uniforms.uCausticStrength.value = gui_params.intensity * 10;
+
+        mat.uniforms.uWaterCenter.value.copy(water.position);
+        mat.uniforms.uWaterSize.value = 5;
+        mat.uniforms.uWaterY.value = water.position.y;
+
+        mat.uniforms.uLightDir.value.copy(lightDir);
+    }
+
+    for (const [name, mesh] of sceneMesh) {
+        mesh.material = name === "floor"
+            ? floorCausticMaterial
+            : wallCausticMaterial;
     }
 
     normalPlane.visible = gui_params.showNormalPlane;

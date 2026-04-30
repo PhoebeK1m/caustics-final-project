@@ -4,10 +4,17 @@ import { causticVertexShader, receiveCausticMaterialFragmentShader, causticMeshV
 export const getReceiveCausticMaterial = () => {
     const material = new THREE.ShaderMaterial({
         uniforms: {
-        uCausticTexture: { value: null },
-        uCausticMatrix: { value: new THREE.Matrix4() },
-        uBaseColor: { value: new THREE.Color("#000000") },
-        uCausticStrength: { value: 0 },
+            uCausticTexture: { value: null },
+            uBaseColor: { value: new THREE.Color("#000000") },
+            uCausticStrength: { value: 0 },
+
+            uWaterCenter: { value: new THREE.Vector3() },
+            uWaterSize: { value: 5 },
+            uWaterY: { value: 0 },
+            uLightDir: { value: new THREE.Vector3(0, -1, 0) },
+
+            // 0 = floor, 1 = wall
+            uReceiverMode: { value: 0 },
         },
         vertexShader: causticVertexShader,
         fragmentShader: receiveCausticMaterialFragmentShader,
@@ -15,8 +22,6 @@ export const getReceiveCausticMaterial = () => {
         depthTest: true,
         transparent: false,
     });
-
-    material.uniforms.uCausticTexture.value = null;
 
     return material;
 };

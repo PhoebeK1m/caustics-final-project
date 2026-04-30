@@ -12,18 +12,42 @@ export const causticVertexShader = `
 `;
 
 export const receiveCausticMaterialFragmentShader = `
+    precision highp float;
+
     uniform sampler2D uCausticTexture;
-    uniform mat4 uCausticMatrix;
     uniform vec3 uBaseColor;
     uniform float uCausticStrength;
 
+    uniform vec3 uWaterCenter;
+    uniform float uWaterSize;
+    uniform float uWaterY;
+    uniform vec3 uLightDir;
+    uniform float uReceiverMode;
+
     varying vec3 vPos;
 
+    vec2 floorUV(vec3 p) {
+        return (p.xz - uWaterCenter.xz) / uWaterSize + 0.5;
+    }
+
+    vec2 wallUV(vec3 p) {
+        vec3 ray = normalize(uLightDir);
+
+        float t = (uWaterY - p.y) / ray.y;
+        vec3 hitWater = p + ray * t;
+
+        return (hitWater.xz - uWaterCenter.xz) / uWaterSize + 0.5;
+    }
+
     void main() {
-        vec4 projected = uCausticMatrix * vec4(vPos, 1.0);
-        vec3 ndc = projected.xyz / projected.w;
-        vec2 causticUV = ndc.xy * 0.5 + 0.5;
-        causticUV.y = 1.0 - causticUV.y;
+        vec2 causticUV;
+
+        if (uReceiverMode < 0.5) {
+            causticUV = floorUV(vPos);
+        } else {
+            causticUV = wallUV(vPos);
+        }
+
         vec3 caustic = vec3(0.0);
 
         if (
@@ -34,8 +58,7 @@ export const receiveCausticMaterialFragmentShader = `
         }
 
         vec3 color = uBaseColor + caustic * uCausticStrength;
-        // gl_FragColor = vec4(color, 1.0);
-        gl_FragColor = vec4(texture2D(uCausticTexture, causticUV).rgb * 10.0, 1.0);
+        gl_FragColor = vec4(color, 1.0);
     }
 `;
 
