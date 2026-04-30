@@ -82,7 +82,8 @@ export const causticMeshVertexShader = `
         vNewPos = projectToFloor(worldWater, bentRay);
 
         // Map floor xz into caustic texture clip space.
-        vec2 causticNDC = vNewPos.xz / (uWaterSize * 0.5);
+        vec2 causticNDC = uv * 2.0 - 1.0;
+        causticNDC.y *= -1.0;
 
         gl_Position = vec4(causticNDC, 0.0, 1.0);
 }
